@@ -2,6 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/AuctionClient/AuctionClient.iml" filepath="$PROJECT_DIR$/AuctionClient/AuctionClient.iml" />
+      <module fileurl="file://$PROJECT_DIR$/AuctionManager/AuctionManager.iml" filepath="$PROJECT_DIR$/AuctionManager/AuctionManager.iml" />
+      <module fileurl="file://$PROJECT_DIR$/AuctionRepository/AuctionRepository.iml" filepath="$PROJECT_DIR$/AuctionRepository/AuctionRepository.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/seguranca2018-p2g1.iml" filepath="$PROJECT_DIR$/.idea/seguranca2018-p2g1.iml" />
     </modules>
   </component>
