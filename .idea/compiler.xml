@@ -6,10 +6,18 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
+        <module name="AuctionClient" />
+        <module name="AuctionManager" />
+        <module name="AuctionRepository" />
+        <module name="Blockchained Repository" />
         <module name="seguranca2018-p2g1" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
+      <module name="AuctionClient" target="1.5" />
+      <module name="AuctionManager" target="1.5" />
+      <module name="AuctionRepository" target="1.5" />
+      <module name="Blockchained Repository" target="1.5" />
       <module name="seguranca2018-p2g1" target="1.5" />
     </bytecodeTargetLevel>
   </component>

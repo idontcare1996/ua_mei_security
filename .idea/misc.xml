@@ -4,6 +4,10 @@
     <option name="originalFiles">
       <list>
         <option value="$PROJECT_DIR$/pom.xml" />
+        <option value="$PROJECT_DIR$/Blockchained Repository/pom.xml" />
+        <option value="$PROJECT_DIR$/AuctionRepository/pom.xml" />
+        <option value="$PROJECT_DIR$/AuctionManager/pom.xml" />
+        <option value="$PROJECT_DIR$/AuctionClient/pom.xml" />
       </list>
     </option>
   </component>
