@@ -13,17 +13,12 @@
         <module name="seguranca2018-p2g1" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel target="11">
-      <module name="AuctionClient" target="11" />
-      <module name="AuctionManager" target="1.5" />
-      <module name="AuctionRepository" target="1.5" />
-      <module name="Blockchained Repository" target="1.5" />
-      <module name="seguranca2018-p2g1" target="11" />
+    <bytecodeTargetLevel>
+      <module name="AuctionClient" target="7" />
+      <module name="AuctionManager" target="7" />
+      <module name="AuctionRepository" target="7" />
+      <module name="Blockchained Repository" target="7" />
+      <module name="seguranca2018-p2g1" target="7" />
     </bytecodeTargetLevel>
-  </component>
-  <component name="JavacSettings">
-    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
-      <module name="AuctionClient" options="" />
-    </option>
   </component>
 </project>
