@@ -14,9 +14,9 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="AuctionClient" target="1.5" />
-      <module name="AuctionManager" target="1.5" />
-      <module name="AuctionRepository" target="1.5" />
+      <module name="AuctionClient" target="7" />
+      <module name="AuctionManager" target="7" />
+      <module name="AuctionRepository" target="7" />
       <module name="Blockchained Repository" target="1.5" />
       <module name="seguranca2018-p2g1" target="1.5" />
     </bytecodeTargetLevel>
