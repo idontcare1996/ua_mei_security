@@ -1,21 +1,30 @@
-import java.sql.SQLOutput;
-import java.util.ArrayList; //To use the Linked List that is the base of a Blockchain
-import com.google.gson.GsonBuilder; //To write/parse JSON
+import com.google.gson.Gson;
+import com.sun.net.httpserver.*;
 
-
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.nio.charset.Charset;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Scanner;
 
 
 
 public class Repository {
 
     //Create ArrayList, named blockchain with objects of type Block
-    public static ArrayList<Block> blockchain = new ArrayList<Block>();
+    public  static ArrayList<Block> blockchain = new ArrayList<Block>();
 
     //Ammount of blocks to add to the blockchain, for testing
     private static final int BLOCKSTOADD = 4;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
 
+        // BLOCKCHAIN STUFF
+        /*
         //Adding the genesis block to the blockchain
         blockchain.add(new Block("Data1","0")); // First block's previous hash is 0 because it's the genesis block.
 
@@ -35,6 +44,88 @@ public class Repository {
         System.out.println(blockchainJSON);
 
         System.out.println("Is the blockchain valid: "+isBlockChainValid());
+        */
+
+        // HTTP SERVER STUFF
+        HttpServer server = HttpServer.create(new InetSocketAddress(8500), 0);
+        HttpContext context = server.createContext("/example");
+        context.setHandler(Repository::handleRequest);
+        server.start();
+
+
+
+
+
+
+    }
+    private static void handleRequest(HttpExchange exchange) throws IOException {
+        Timestamp timestampReception = new Timestamp(System.currentTimeMillis());
+        URI requestURI = exchange.getRequestURI();
+        //printRequestInfo(exchange);
+        //String response = "This is the response at " + requestURI;
+        if(exchange.getRequestMethod().equalsIgnoreCase("POST"))
+        {
+            System.out.println( " \n          POST ");
+            String received = new String();
+
+            received = convert(exchange.getRequestBody(),Charset.forName("UTF-8"));
+
+            Gson gsonreceived = new Gson();
+
+            Auction receivedAuction = gsonreceived.fromJson(received,Auction.class);
+            String response = ("Auction id: " + receivedAuction.getId() + "\n" + "Auction creation timestamp: " + receivedAuction.getTimestamp() + "\n" + "Timestamp reception: " + timestampReception + "\n");
+            System.out.println(response);
+            //USAR O receivedAuction.get(...) para usar os dados no repositório e no manager
+
+            //envio a resposta ao pedido de Post, neste caso, metendo esta string construída com o que se obtem do novo objecto Auction
+            exchange.sendResponseHeaders(200, response.length());
+            OutputStream os = exchange.getResponseBody();
+            os.write(response.getBytes());
+            os.close();
+
+
+        }
+
+        if(exchange.getRequestMethod().equalsIgnoreCase("GET"))
+        {
+            System.out.println( " GET ");
+
+            String received = new String();
+            String response = new String();
+
+            //Figure out what they want with this GET method
+            //TO DO: DO SOMETHING WITH THE GET REQUEST
+
+            response = "We received your GET request. Unfortunately, Madaíl hasn't done this part yet and I'm tired \n " + "Time: " + timestampReception;
+            System.out.println(response);
+            exchange.sendResponseHeaders(200, response.getBytes().length);
+            OutputStream os = exchange.getResponseBody();
+            os.write(response.getBytes());
+            os.close();
+        }
+
+
+
+    }
+
+    private static void printRequestInfo(HttpExchange exchange) {
+        System.out.println("-- headers --");
+        Headers requestHeaders = exchange.getRequestHeaders();
+        requestHeaders.entrySet().forEach(System.out::println);
+
+        System.out.println("-- principle --");
+        HttpPrincipal principal = exchange.getPrincipal();
+        System.out.println(principal);
+
+        System.out.println("-- HTTP method --");
+        String requestMethod = exchange.getRequestMethod();
+        System.out.println(requestMethod);
+
+        System.out.println("-- query --");
+        URI requestURI = exchange.getRequestURI();
+        String query = requestURI.getQuery();
+        System.out.println(query);
+
 
     }
 
@@ -62,6 +153,12 @@ public class Repository {
 
         }
         return true;
+    }
+    public static String convert(InputStream inputStream, Charset charset) throws IOException {
+
+        try (Scanner scanner = new Scanner(inputStream, charset.name())) {
+            return scanner.useDelimiter("\\A").next();
+        }
     }
 
 }
