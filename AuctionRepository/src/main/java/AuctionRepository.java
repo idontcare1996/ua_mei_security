@@ -1,12 +1,12 @@
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import com.google.gson.JsonObject;
+
+import java.io.*;
 import java.lang.ClassNotFoundException;
 import java.lang.Runnable;
 import java.lang.Thread;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.stream.Collectors;
 
 public class AuctionRepository {
     private ServerSocket server;
@@ -26,10 +26,8 @@ public class AuctionRepository {
     }
 
     private void handleConnection() {
-        System.out.println("Waiting for client message...");
 
-        // The server do a loop here to accept all connection initiated by the
-        // client application.
+
         while (true) {
             try {
                 Socket socket = server.accept();
@@ -52,25 +50,22 @@ public class AuctionRepository {
         public void run() {
             Auction auction = new Auction();
             try {
-                // Read a message sent by client application
-                //ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
-                InputStreamReader is = new InputStreamReader(socket.getInputStream());
-                //auction.setData(((Auction) ois.readObject()).getData());
-                String message = "";
-                System.out.println(is);
-                System.out.println("Message Received: " + is.read());
 
-                // Send a response information to the client application
+                ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+
+                System.out.println((String) ois.readObject());
+
                 ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
                 oos.writeObject("Hi...");
 
-                //ois.close();
-                is.close();
-                oos.close();
+                ois.close();
+                 oos.close();
                 socket.close();
 
                 System.out.println("Waiting for client message...");
             } catch (IOException /*| ClassNotFoundException*/ e) {
+                e.printStackTrace();
+            } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             }
         }

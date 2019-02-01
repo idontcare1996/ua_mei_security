@@ -58,26 +58,18 @@ public class AuctionClient {
         System.out.println(auction);
         System.out.println(jAuction);
         try {
-            // Create a connection to the server socket on the server application
             InetAddress host = InetAddress.getLocalHost();
             Socket socket = new Socket(host.getHostName(), 7777);
 
-            // Send a message to the client application
             ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-            OutputStreamWriter os = new OutputStreamWriter(socket.getOutputStream());
-            PrintWriter pr = new PrintWriter(socket.getOutputStream());
-            JsonObject json = new JsonObject();
-            json.getAsJsonObject(jAuction);
-            pr.print(jAuction);
-
-            // Read and display the response message sent by server application
+            oos.writeObject(jAuction);
             ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
             String message = (String) ois.readObject();
             System.out.println("Message: " + message);
 
             ois.close();
             oos.close();
-            os.close();
+
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }/*
