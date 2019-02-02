@@ -1,0 +1,25 @@
+SUBDIRS = include scconf scdl libopensc pkcs11 tools
+
+all::
+	list='$(SUBDIRS)'; \
+	for subdir in $$list; do \
+		echo " "; \
+		echo "   *** Making in pkcs11/src/$$subdir ***"; \
+		cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) -f Makefile.mac && cd ..; \
+	done;
+
+clean:
+	list='$(SUBDIRS)'; \
+	for subdir in $$list; do \
+		cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) -f Makefile.mac clean && cd ..; \
+	done;
+
+install:
+	cd libopensc && $(MAKE) $(AM_MAKEFLAGS) -f Makefile.mac install && cd ..
+	cd pkcs11 && $(MAKE) $(AM_MAKEFLAGS) -f Makefile.mac install && cd ..
+	cd tools && $(MAKE) $(AM_MAKEFLAGS) -f Makefile.mac install && cd ..
+
+uninstall:
+	cd libopensc && $(MAKE) $(AM_MAKEFLAGS) -f Makefile.mac uninstall && cd ..
+	cd pkcs11 && $(MAKE) $(AM_MAKEFLAGS) -f Makefile.mac uninstall && cd ..
+	cd tools && $(MAKE) $(AM_MAKEFLAGS) -f Makefile.mac uninstall && cd ..
