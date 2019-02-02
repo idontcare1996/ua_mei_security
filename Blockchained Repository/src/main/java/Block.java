@@ -6,10 +6,10 @@ public class Block {
 
     public Auction auction;
     public Bid bid;
-    private Timestamp timestamp;
-    private String hash;
-    private String previous_hash;
-    private int nonce;
+    public Timestamp timestamp;
+    public String hash;
+    public String previous_hash;
+    public int nonce;
 
     //Block Constructor.
     public Block(Auction auction, Bid bid, String previous_hash ) {
