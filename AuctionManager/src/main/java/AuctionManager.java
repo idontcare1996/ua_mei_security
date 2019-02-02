@@ -1,13 +1,22 @@
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.nio.charset.Charset;
+import java.sql.Timestamp;
 import java.util.*;
+
+import com.google.gson.Gson;
+import com.sun.net.httpserver.*;
+
 
 public class AuctionManager {
     private Selector selector;
@@ -15,6 +24,71 @@ public class AuctionManager {
     private InetSocketAddress listenAddress;
 
     public static void main(String[] args) throws Exception {
+
+
+// HTTP SERVER STUFF
+        HttpServer server = HttpServer.create(new InetSocketAddress(8500), 0);
+        HttpContext context = server.createContext("/example");
+        context.setHandler(AuctionManager::handleRequest);
+        server.start();
+    }
+
+    private static void handleRequest(HttpExchange exchange) throws IOException {
+        Timestamp timestampReception = new Timestamp(System.currentTimeMillis());
+        URI requestURI = exchange.getRequestURI();
+        //printRequestInfo(exchange);
+        //String response = "This is the response at " + requestURI;
+        if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
+            System.out.println(" \n          POST ");
+            String received = "";
+
+            received = convert(exchange.getRequestBody(), Charset.forName("UTF-8"));
+
+            Gson gsonReceived = new Gson();
+            System.out.println(gsonReceived);
+            Message receivedMessage = gsonReceived.fromJson(received, Message.class);
+            Gson gsonAuction = new Gson();
+            Auction receivedAuction = gsonAuction.fromJson(receivedMessage.getData(), Auction.class);
+            System.out.println(receivedAuction.getProduct());
+            String response = ("Auction id: " + receivedAuction.getId() + "\n" + "Auction creation timestamp: " + receivedAuction.getTimestamp() + "\n" + "Timestamp reception: " + timestampReception + "\n");
+            System.out.println(response);
+            //USAR O receivedAuction.get(...) para usar os dados no repositório e no manager
+
+            //envio a resposta ao pedido de Post, neste caso, metendo esta string construída com o que se obtem do novo objecto Auction
+            exchange.sendResponseHeaders(200, response.length());
+            OutputStream os = exchange.getResponseBody();
+            os.write(response.getBytes());
+            os.close();
+
+
+        }
+
+        if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
+            System.out.println(" GET ");
+
+            String received = "";
+            String response = "";
+
+            //Figure out what they want with this GET method
+            //TO DO: DO SOMETHING WITH THE GET REQUEST
+
+            response = "We received your GET request. Unfortunately, Madaíl hasn't done this part yet and I'm tired \n " + "Time: " + timestampReception;
+            System.out.println(response);
+            exchange.sendResponseHeaders(200, response.getBytes().length);
+            OutputStream os = exchange.getResponseBody();
+            os.write(response.getBytes());
+            os.close();
+        }
+
+
+    }
+    public static String convert(InputStream inputStream, Charset charset) throws IOException {
+
+        try (Scanner scanner = new Scanner(inputStream, charset.name())) {
+            return scanner.useDelimiter("\\A").next();
+        }
+    }
+        /*
         Runnable server = new Runnable() {
             @Override
             public void run() {
@@ -140,7 +214,7 @@ public class AuctionManager {
             oos.close();
         } catch (IOException | ClassNotFoundException e) {
 
-        }
-    }
+        }*/
+
 }
-*/
+

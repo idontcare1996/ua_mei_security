@@ -66,7 +66,7 @@ public class Repository {
         if(exchange.getRequestMethod().equalsIgnoreCase("POST"))
         {
             System.out.println( " \n          POST ");
-            String received = new String();
+            String received = "";
 
             received = convert(exchange.getRequestBody(),Charset.forName("UTF-8"));
 
@@ -90,8 +90,8 @@ public class Repository {
         {
             System.out.println( " GET ");
 
-            String received = new String();
-            String response = new String();
+            String received = "";
+            String response = "";
 
             //Figure out what they want with this GET method
             //TO DO: DO SOMETHING WITH THE GET REQUEST

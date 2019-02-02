@@ -1,3 +1,4 @@
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
 public class Hasher {
@@ -12,7 +13,7 @@ public class Hasher {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
 
             //Applies SHA256
-            byte[] byteInput = digest.digest(input.getBytes("UTF-8"));
+            byte[] byteInput = digest.digest(input.getBytes(StandardCharsets.UTF_8));
 
             StringBuffer hexaString = new StringBuffer(); // Hashed String stored as Hexadecimal
 
