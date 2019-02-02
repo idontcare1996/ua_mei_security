@@ -12,6 +12,8 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 
+
+
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -39,9 +41,12 @@ public class AuctionClient {
     private JTextPane GETtextplane;
     private JPanel PostJPanel;
     private JPanel GETJpanel;
+    private JTextField auctionType;
+    private JTextField auctionProduct;
+    private JTextField auctionSettings;
 
-
-    public static void main(String[] args) throws IOException, ConnectException,Exception {
+    String ccNumber = "12345678";
+    public static void main(String[] args) throws Exception {
 
     //Start the GUI
         JFrame frame = new JFrame("Auction Client");
@@ -107,17 +112,20 @@ public class AuctionClient {
             @Override
             public void actionPerformed(ActionEvent e) {
 
-                Auction auction = new Auction("id000001",
-                        "eng",
-                        "me,myself and I",
-                        "Etruscan ceramic sculpture of a boar",
-                        "random");
+                Auction auction = new Auction("tbd",
+                        auctionType.getText(),
+                        ccNumber,
+                        auctionProduct.getText(),
+                        auctionSettings.getText());
 
                 Gson gson = new Gson();
-                String stringauction = gson.toJson(auction);
-
+                String stringAuction = gson.toJson(auction);
+                System.out.println(stringAuction);
+                Message message = new Message("Auction", "validate", stringAuction);
+                String stringMessage = gson.toJson(message);
+                System.out.println(stringMessage);
                 try {
-                    send(stringauction);
+                    send(stringMessage);
                 }catch (Exception en) {
                 }
 
@@ -126,17 +134,12 @@ public class AuctionClient {
         GETButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                Auction auction = new Auction("id000001",
-                        "eng",
-                        "me,myself and I",
-                        "Etruscan ceramic sculpture of a boar",
-                        "random");
+                Auction auction = new Auction();
 
                 Gson gson = new Gson();
-                String stringauction = gson.toJson(auction);
-
+                String stringAuction = gson.toJson(auction);
                 try {
-                    ask(stringauction);
+                    ask(stringAuction);
                 }catch (Exception en2) {
                 }
             }

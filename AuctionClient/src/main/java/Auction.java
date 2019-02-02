@@ -10,6 +10,9 @@ public class Auction {
     private Timestamp timestamp;
     private String hash;
 
+    public Auction(){
+
+    }
     public Auction(String id, String type, String seller,String product, String settings)
     {
         this.id = id;
