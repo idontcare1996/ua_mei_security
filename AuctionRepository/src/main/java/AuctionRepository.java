@@ -27,7 +27,7 @@ public class AuctionRepository {
 
         // HTTP SERVER STUFF
         HttpServer server = HttpServer.create(new InetSocketAddress(8501), 0);
-        HttpContext context = server.createContext("/");
+        HttpContext context = server.createContext("/security");
         context.setHandler(AuctionRepository::handleRequest);
         server.start();
 

@@ -47,6 +47,8 @@ public class AuctionClient {
     private JCheckBox settingsBidder;
     private JCheckBox settingsBidValue;
     private JCheckBox settingsAuthor;
+    private JPanel auctionListTabPane;
+    private JButton listMeTheStuffButton;
 
     String ccNumber = "12345678";
     public static void main(String[] args) throws Exception {
@@ -162,12 +164,27 @@ public class AuctionClient {
         GETButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+
                 Auction auction = new Auction();
 
                 Gson gson = new Gson();
                 String stringAuction = gson.toJson(auction);
                 try {
                     ask(stringAuction);
+                }catch (Exception en2) {
+                }
+            }
+        });
+        listMeTheStuffButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+                Auction auction = new Auction();
+                Message message = new Message("Auction", "List", "List me the shit fam");
+                Gson gson = new Gson();
+                String stringMessage = gson.toJson(message);
+                try {
+                    ask(stringMessage);
                 }catch (Exception en2) {
                 }
             }
@@ -208,7 +225,7 @@ public class AuctionClient {
                 ContentType.APPLICATION_JSON);
 
         HttpClient httpClient = HttpClientBuilder.create().build(); //todo; change ports send(message, port)
-        HttpPost request = new HttpPost("http://localhost:8500"); //COLOCAR ISTO MAIS PARA CIMA, NUMA COISA TIPO #DEFINE
+        HttpPost request = new HttpPost("http://localhost:8500/security"); //COLOCAR ISTO MAIS PARA CIMA, NUMA COISA TIPO #DEFINE
         request.setEntity(entity);
 
 
@@ -243,7 +260,7 @@ public class AuctionClient {
         StringEntity entity = new StringEntity(what, ContentType.APPLICATION_JSON);
 
         HttpClient httpClient = HttpClientBuilder.create().build();
-        HttpGet request = new HttpGet("http://localhost:8500/example"); //COLOCAR ISTO MAIS PARA CIMA, NUMA COISA TIPO #DEFINE
+        HttpGet request = new HttpGet("http://localhost:8500/security"); //COLOCAR ISTO MAIS PARA CIMA, NUMA COISA TIPO #DEFINE
 
 
 

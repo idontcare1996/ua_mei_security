@@ -39,7 +39,7 @@ public class AuctionManager {
 
 // HTTP SERVER STUFF
         HttpServer server = HttpServer.create(new InetSocketAddress(8500), 0);
-        HttpContext context = server.createContext("/example");
+        HttpContext context = server.createContext("/security");
         context.setHandler(AuctionManager::handleRequest);
         server.start();
     }
@@ -139,7 +139,7 @@ public class AuctionManager {
                 ContentType.APPLICATION_JSON);
 
         HttpClient httpClient = HttpClientBuilder.create().build();
-        HttpPost request = new HttpPost("http://localhost:"+port); //COLOCAR ISTO MAIS PARA CIMA, NUMA COISA TIPO #DEFINE
+        HttpPost request = new HttpPost("http://localhost:"+port+"/security"); //COLOCAR ISTO MAIS PARA CIMA, NUMA COISA TIPO #DEFINE
         request.setEntity(entity);
 
 
