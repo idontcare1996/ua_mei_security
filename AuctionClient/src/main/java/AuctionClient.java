@@ -139,6 +139,7 @@ public class AuctionClient {
                 HashMap<String, ArrayList<Block>> active_blockchains = gson.fromJson(stringMessage, type);
 
                 System.out.println(active_blockchains.size());
+                editorPane2.setText("");
                 for (HashMap.Entry<String, ArrayList<Block>> entry : active_blockchains.entrySet()) {
 
                     String key = entry.getKey();
@@ -146,7 +147,8 @@ public class AuctionClient {
                     System.out.println(value.get(0).auction.getProduct());
                     String seller = value.get(0).auction.getSeller();
                     String product = value.get(0).auction.getProduct();
-                    editorPane2.setText(editorPane2.getText() + "\n" + "Seller: "+seller+"  Product: "+product);
+                    String uuid = key;
+                    editorPane2.setText(editorPane2.getText() + "\n\n" + "Seller: "+seller+"  Product: "+product+"\n    UUID:<"+uuid+">");
                     // ...
                 }
 
@@ -163,16 +165,17 @@ public class AuctionClient {
                 //System.out.println(message);
                 try {
                     //Copies the response from the POST to a string
-                    String auctionstring = postMessage(stringMessage, RepositoryPort);
+                    String auctionstring = getMessage("open", RepositoryPort);
                     System.out.println(auctionstring);
 
                     //Sets a type, to use in the gson.fromJson
                     Type type = new TypeToken<HashMap<String, ArrayList<Block>>>(){}.getType();
 
                     //refreshes the client's active_blockchain.
+
+
                     active_blockchains = gson.fromJson(auctionstring, type);
                     comboBoxAuction.removeAllItems();
-
                     for (HashMap.Entry<String, ArrayList<Block>> entry : active_blockchains.entrySet()) {
 
                         String key = entry.getKey();
