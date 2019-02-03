@@ -80,14 +80,14 @@ public class AuctionRepository {
         }
 
         if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
-            System.out.println(" GET ");
+            System.out.println(exchange.getResponseBody());
 
-            String received = "";
+
             String response = "";
 
             //Figure out what they want with this GET method
             //TO DO: DO SOMETHING WITH THE GET REQUEST
-            received = convert(exchange.getRequestBody(), Charset.forName("UTF-8"));
+            String received = convert(exchange.getRequestBody(), Charset.forName("UTF-8"));
             Gson gsonReceived = new Gson();
             Message message = gsonReceived.fromJson(received, Message.class);
             switch (message.getAction()) {

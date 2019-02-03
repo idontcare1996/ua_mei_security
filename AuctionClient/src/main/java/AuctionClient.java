@@ -36,8 +36,6 @@ public class AuctionClient {
     private JTextPane POSTtextpane;
     private JButton GETButton;
     private JTextPane GETtextplane;
-    private JPanel PostJPanel;
-    private JPanel GETJpanel;
     private JTextField auctionProduct;
     private JTextField auctionDescription;
     private JTextField settingsValue;
@@ -49,8 +47,11 @@ public class AuctionClient {
     private JCheckBox settingsAuthor;
     private JPanel auctionListTabPane;
     private JButton listMeTheStuffButton;
+    private JEditorPane editorPane1;
 
     String ccNumber = "12345678";
+    Integer RepositoryPort = 8501;
+    Integer ManagerPort = 8500;
     public static void main(String[] args) throws Exception {
 
     //Start the GUI
@@ -60,56 +61,7 @@ public class AuctionClient {
         frame.pack();
         frame.setVisible(true);
 
-    // Testing the creation of messages in JSON format
 
-        // Create new auction
-        // public Auction(String id, String type, String seller,String product, String settings)
-
-
-        // Create the auction message with the created auction
-        // public JsonObject AuctionMessage(String id, String author, String action, Auction auction)
-
-
-
-
-        /*
-        Auction auction = new Auction();
-
-
-        Gson gson = new Gson();
-        auction.setId("Hu7uh8hihy7h8jhih");
-        auction.setData("Etruscan ceramic sculpture of a boar");
-        auction.setProduct("Boar Sculpture 500BC");
-        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        auction.setTimestamp(timestamp);
-        String jAuction = gson.toJson(auction);
-
-        System.out.println(auction);
-        System.out.println(jAuction);
-        try {
-            InetAddress host = InetAddress.getLocalHost();
-            Socket socket = new Socket(host.getHostName(), 7777);
-
-            ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-            oos.writeObject(jAuction);
-            ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
-            String message = (String) ois.readObject();
-            System.out.println("Message: " + message);
-
-            ois.close();
-            oos.close();
-
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }/*
-        Auction auction = createDummyObject();
-
-        // Convert object to JSON string
-        Gson gson = new Gson();
-        String json = gson.toJson(auction);
-        //Print the json string
-        System.out.println(json);
-        */
 
     }
 
@@ -155,26 +107,15 @@ public class AuctionClient {
                 String stringMessage = gson.toJson(message);
                 System.out.println(stringMessage);
                 try {
-                    send(stringMessage);
+                    String result = send(stringMessage,ManagerPort);
+                    System.out.println(result);
+                    editorPane1.setText( editorPane1.getText() + "\n\n" +  result);
                 }catch (Exception en) {
                 }
 
             }
         });
-        GETButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
 
-                Auction auction = new Auction();
-
-                Gson gson = new Gson();
-                String stringAuction = gson.toJson(auction);
-                try {
-                    ask(stringAuction);
-                }catch (Exception en2) {
-                }
-            }
-        });
         listMeTheStuffButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -184,7 +125,7 @@ public class AuctionClient {
                 Gson gson = new Gson();
                 String stringMessage = gson.toJson(message);
                 try {
-                    ask(stringMessage);
+                    ask(stringMessage,RepositoryPort);
                 }catch (Exception en2) {
                 }
             }
@@ -217,7 +158,7 @@ public class AuctionClient {
         }
     }
 
-    private void send(String message2send) throws Exception{
+    private String send(String message2send,Integer port) throws Exception{
 
 
         // HTTP code
@@ -225,44 +166,20 @@ public class AuctionClient {
                 ContentType.APPLICATION_JSON);
 
         HttpClient httpClient = HttpClientBuilder.create().build(); //todo; change ports send(message, port)
-        HttpPost request = new HttpPost("http://localhost:8500/security"); //COLOCAR ISTO MAIS PARA CIMA, NUMA COISA TIPO #DEFINE
+        HttpPost request = new HttpPost("http://localhost:"+port+"/security"); //COLOCAR ISTO MAIS PARA CIMA, NUMA COISA TIPO #DEFINE
         request.setEntity(entity);
 
 
         HttpResponse response = httpClient.execute(request);
         String responseBody = EntityUtils.toString(response.getEntity());
-
-        POSTtextpane.setText(responseBody + "\n\n" + POSTtextpane.getText()); //todo: get this out of here, into the gui part of the code
-
-
-
-            /*
-            InetSocketAddress hostAddress = new InetSocketAddress("localhost", 8090);
-            SocketChannel client = SocketChannel.open(hostAddress);
-
-            System.out.println("Sending...");
-
-
-
-
-                byte [] message = new String(message2send).getBytes();
-                ByteBuffer buffer = ByteBuffer.wrap(message);
-                client.write(buffer);
-                System.out.println(message2send);
-                buffer.clear();
-                Thread.sleep(50);
-        System.out.println("Sent...");
-            client.close();
-            */
+        return responseBody;
     }
-    private void ask(String what) throws Exception{
+    private void ask(String what,Integer port) throws Exception{
         // HTTP code
         StringEntity entity = new StringEntity(what, ContentType.APPLICATION_JSON);
 
         HttpClient httpClient = HttpClientBuilder.create().build();
-        HttpGet request = new HttpGet("http://localhost:8500/security"); //COLOCAR ISTO MAIS PARA CIMA, NUMA COISA TIPO #DEFINE
-
-
+        HttpGet request = new HttpGet("http://localhost:"+port+"/security"); //COLOCAR ISTO MAIS PARA CIMA, NUMA COISA TIPO #DEFINE
 
         HttpResponse response = httpClient.execute(request);
         String responseBody = EntityUtils.toString(response.getEntity());
