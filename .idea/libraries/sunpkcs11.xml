@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="sunpkcs11">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/AuctionClient/sunpkcs11.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

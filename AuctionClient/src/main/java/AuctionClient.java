@@ -12,6 +12,7 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
+import pt.gov.cartaodecidadao.*;
 
 import javax.swing.*;
 import java.awt.event.*;
@@ -19,12 +20,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
 
 //IO stuff
 //Apache HttpClient stuff
+
 
 public class AuctionClient {
 
@@ -63,13 +67,14 @@ public class AuctionClient {
     private JComboBox comboBoxTerminate;
     private JButton terminateButton;
 
-    String ccNumber = "12345678";
+    private static String ccNumber = "12345678";
+    private static String ccName = "";
+    private static String ccKey;
     Integer RepositoryPort = 8501;
     Integer ManagerPort = 8500;
 
     private static HashMap<String, ArrayList<Block>> active_blockchains = new HashMap<>();
     private static HashMap<String, ArrayList<Block>> terminatedBlockchain = new HashMap<>();
-
 
 
     public static void main(String[] args) throws Exception {
@@ -83,10 +88,61 @@ public class AuctionClient {
 
         //Grab the latest repositories from the AuctionRepository
 
+        //Identification using Citizenship Card
+        // create configuration
+        System.setProperty("java.library.path", "D:\\UNIVERSIDADE\\Security\\ua_mei_security\\AuctionClient");
+        loadPteidLib();
 
+        PTEID_ReaderSet.initSDK();
+        PTEID_EIDCard card;
+        PTEID_ReaderContext context;
+        PTEID_ReaderSet readerSet;
+        readerSet = PTEID_ReaderSet.instance();
+        for (int i = 0; i < readerSet.readerCount();
+             i++) {
+            context = readerSet.getReaderByNum(i);
+            if (context.isCardPresent()) {
+                card = context.getEIDCard();
+                PTEID_EId eid = card.getID();
+                String nome = eid.getGivenName();
+                String nrCC = eid.getDocumentNumber();
+                System.out.println(nome + " " + nrCC);
+                ccNumber = nrCC.replaceAll(" ", "").trim();
+                System.out.println(ccNumber);
+                PTEID_Certificate signature = card.getAuthentication();
+                if (signature.isFromPteidValidChain()) {
+                } else {
+
+                    System.out.println("Not VALID");
+                }
+
+            }
+        }
+
+
+        PTEID_ReaderSet.releaseSDK();
 
     }
 
+
+    public static boolean loadPteidLib() throws UnsatisfiedLinkError {
+        return ((Boolean) AccessController.doPrivileged(new PrivilegedAction() {
+            @Override
+            public Boolean run() {
+                try {
+                    System.loadLibrary("pteidlibj");
+                    return true;
+                } catch (UnsatisfiedLinkError t) {
+                    if (t.getMessage().contains("already loaded")) {
+                        JOptionPane.showMessageDialog(null, "Biblioteca do Cartão de Cidadão bloqueada.", "Biblioteca bloqueada", JOptionPane.ERROR_MESSAGE);
+                    } else {
+                        JOptionPane.showMessageDialog(null, "Middleware do Cartão de Cidadão não está instalado.", "Aplicação não está instalada", JOptionPane.ERROR_MESSAGE);
+                    }
+                    return false;
+                }
+            }
+        }));
+    }
 
     public AuctionClient() {
         POSTButton.addActionListener(new ActionListener() {

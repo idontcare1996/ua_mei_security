@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="pteidlibj">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/AuctionClient/pteidlibj.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
