@@ -3,9 +3,9 @@ import java.sql.Timestamp;
 public class Auction {
 
     private String id;
-    private String type;
     private String seller;
     private String product;
+    private String description;
     private String settings;
     private Timestamp timestamp;
     private String hash;
@@ -13,27 +13,29 @@ public class Auction {
     public Auction(){
 
     }
-    public Auction(String id, String type, String seller,String product, String settings)
-    {
-        this.id = id;
-        this.type = type;
+
+    public Auction(String seller, String product, String description, String settings, Timestamp timestamp) {
         this.seller = seller;
         this.product = product;
+        this.description = description;
+        this.settings = settings;
+        this.timestamp = timestamp;
+    }
+
+    public Auction(String id, String seller, String product, String description, String settings)
+    {
+        this.id = id;
+        this.seller = seller;
+        this.product = product;
+        this.description = description;
         this.settings = settings;
         this.timestamp = new Timestamp(System.currentTimeMillis()); // TO DO: CHANGE THIS TO THE SAME TIME FOR EVERYONE (timezones and accurate times)
         this.hash = calculateHash();
     }
     public String calculateHash(){
-        String output = Hasher.hashSHA256(id+type+seller+product+settings+
+        String output = Hasher.hashSHA256(id+seller+product+settings+
                 (timestamp));
         return output;
-    }
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
     }
 
     public String getSeller() {

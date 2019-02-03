@@ -12,14 +12,11 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 
-
-
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.ConnectException;
 import java.nio.charset.Charset;
 import java.util.Scanner;
 
@@ -41,9 +38,15 @@ public class AuctionClient {
     private JTextPane GETtextplane;
     private JPanel PostJPanel;
     private JPanel GETJpanel;
-    private JTextField auctionType;
     private JTextField auctionProduct;
-    private JTextField auctionSettings;
+    private JTextField auctionDescription;
+    private JTextField settingsValue;
+    private JTextField settingsMinimum;
+    private JTextField settingsMaximum;
+    private JTextField settingsTime;
+    private JCheckBox settingsBidder;
+    private JCheckBox settingsBidValue;
+    private JCheckBox settingsAuthor;
 
     String ccNumber = "12345678";
     public static void main(String[] args) throws Exception {
@@ -107,18 +110,43 @@ public class AuctionClient {
         */
 
     }
+
+
     public AuctionClient() {
         POSTButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
 
-                Auction auction = new Auction("tbd",
-                        auctionType.getText(),
-                        ccNumber,
-                        auctionProduct.getText(),
-                        auctionSettings.getText());
 
                 Gson gson = new Gson();
+                //Default
+                /*String auctionType = "Closed";
+                boolean encryptedBidder = true;
+                boolean encryptedBidValue = true;
+                boolean encryptedAuthor = true;
+
+                if (auctionTypeOpen.isSelected()){
+                    auctionType = "Open";
+                    encryptedBidder = false;
+                    encryptedBidValue = false;
+                    encryptedAuthor = false;
+                }*/
+                Settings settings = new Settings(
+                        Double.parseDouble(settingsValue.getText()),
+                        Double.parseDouble(settingsMinimum.getText()),
+                        Double.parseDouble(settingsMaximum.getText()),
+                        settingsBidder.isSelected(),
+                        settingsBidValue.isSelected(),
+                        Integer.parseInt(settingsTime.getText()),
+                        settingsAuthor.isSelected()
+                );
+                String auctionSettings = gson.toJson(settings);
+                Auction auction = new Auction("tbd",
+                        ccNumber,
+                        auctionProduct.getText(),
+                        auctionDescription.getText(),
+                        auctionSettings);
+
                 String stringAuction = gson.toJson(auction);
                 System.out.println(stringAuction);
                 Message message = new Message("Auction", "validate", stringAuction);
@@ -179,15 +207,16 @@ public class AuctionClient {
         StringEntity entity = new StringEntity(message2send,
                 ContentType.APPLICATION_JSON);
 
-        HttpClient httpClient = HttpClientBuilder.create().build();
-        HttpPost request = new HttpPost("http://localhost:8500/example"); //COLOCAR ISTO MAIS PARA CIMA, NUMA COISA TIPO #DEFINE
+        HttpClient httpClient = HttpClientBuilder.create().build(); //todo; change ports send(message, port)
+        HttpPost request = new HttpPost("http://localhost:8500"); //COLOCAR ISTO MAIS PARA CIMA, NUMA COISA TIPO #DEFINE
         request.setEntity(entity);
 
 
         HttpResponse response = httpClient.execute(request);
         String responseBody = EntityUtils.toString(response.getEntity());
 
-        POSTtextpane.setText(responseBody + "\n\n" + POSTtextpane.getText());
+        POSTtextpane.setText(responseBody + "\n\n" + POSTtextpane.getText()); //todo: get this out of here, into the gui part of the code
+
 
 
             /*

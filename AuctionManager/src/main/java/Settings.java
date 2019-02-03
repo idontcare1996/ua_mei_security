@@ -68,11 +68,11 @@ public class Settings {
         this.time = time;
     }
 
-    public boolean isEncrytedAuthor() {
+    public boolean isEncryptedAuthor() {
         return encryptedAuthor;
     }
 
-    public void setEncrytedAuthor(boolean encrytedAuthor) {
-        this.encryptedAuthor = encrytedAuthor;
+    public void setEncryptedAuthor(boolean encryptedAuthor) {
+        this.encryptedAuthor = encryptedAuthor;
     }
 }

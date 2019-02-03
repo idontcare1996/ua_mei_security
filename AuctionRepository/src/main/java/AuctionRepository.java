@@ -1,25 +1,24 @@
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
+import com.google.gson.GsonBuilder;
 import com.sun.net.httpserver.*;
 
-import java.io.*;
-import java.lang.ClassNotFoundException;
-import java.lang.Runnable;
-import java.lang.Thread;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Scanner;
-import java.util.stream.Collectors;
 
 public class AuctionRepository {
 
     //Create ArrayList, named blockchain with objects of type Block
-    public  static ArrayList<Block> blockchain = new ArrayList<Block>();
+
+    private static HashMap<String, ArrayList<Block>> active_blockchains = new HashMap<>();
+    private static HashMap<String, ArrayList<Block>> terminatedBlockchain = new HashMap<>();
 
     //Ammount of blocks to add to the blockchain, for testing
     private static final int BLOCKSTOADD = 4;
@@ -27,14 +26,16 @@ public class AuctionRepository {
     public static void main(String[] args) throws IOException {
 
         // HTTP SERVER STUFF
-        HttpServer server = HttpServer.create(new InetSocketAddress(8500), 0);
-        HttpContext context = server.createContext("/example");
+        HttpServer server = HttpServer.create(new InetSocketAddress(8501), 0);
+        HttpContext context = server.createContext("/");
         context.setHandler(AuctionRepository::handleRequest);
         server.start();
+
     }
 
     private static void handleRequest(HttpExchange exchange) throws IOException {
         Timestamp timestampReception = new Timestamp(System.currentTimeMillis());
+        ArrayList<Block> blockchain = new ArrayList<Block>();
         URI requestURI = exchange.getRequestURI();
         //printRequestInfo(exchange);
         //String response = "This is the response at " + requestURI;
@@ -47,6 +48,24 @@ public class AuctionRepository {
             Gson gsonreceived = new Gson();
 
             Auction receivedAuction = gsonreceived.fromJson(received, Auction.class);
+            System.out.println( receivedAuction.getId());
+
+            //SEND THIS TO THE BLOCk
+
+            //Adding the genesis block to the blockchain
+            blockchain.add(new Block(receivedAuction,"0")); // First block's previous hash is 0 because it's the genesis block.
+
+            //Stores the blockchain in JSON format, with PrettyPrinting on(facilitating human reading).
+            String blockchainJSON = new GsonBuilder().setPrettyPrinting().create().toJson(blockchain);
+
+            //Prints the JSON
+            System.out.println(blockchainJSON);
+
+            System.out.println("Is the blockchain valid: "+isBlockChainValid(blockchain));
+
+
+
+
             String response = ("Auction id: " + receivedAuction.getId() + "\n" + "Auction creation timestamp: " + receivedAuction.getTimestamp() + "\n" + "Timestamp reception: " + timestampReception + "\n");
             System.out.println(response);
             //USAR O receivedAuction.get(...) para usar os dados no repositório e no manager
@@ -68,9 +87,16 @@ public class AuctionRepository {
 
             //Figure out what they want with this GET method
             //TO DO: DO SOMETHING WITH THE GET REQUEST
-
-            response = "We received your GET request. Unfortunately, Madaíl hasn't done this part yet and I'm tired \n " + "Time: " + timestampReception;
-            System.out.println(response);
+            received = convert(exchange.getRequestBody(), Charset.forName("UTF-8"));
+            Gson gsonReceived = new Gson();
+            Message message = gsonReceived.fromJson(received, Message.class);
+            switch (message.getAction()) {
+                case "list":
+                response = gsonReceived.toJson(active_blockchains);
+                case "e":
+            }
+            //response = "We received your GET request. Unfortunately, Madaíl hasn't done this part yet and I'm tired \n " + "Time: " + timestampReception;
+            //System.out.println(response);
             exchange.sendResponseHeaders(200, response.getBytes().length);
             OutputStream os = exchange.getResponseBody();
             os.write(response.getBytes());
@@ -102,7 +128,7 @@ public class AuctionRepository {
     }
 
     //Method to test blockchain's validity
-    public static Boolean isBlockChainValid() {
+    public static Boolean isBlockChainValid(ArrayList<Block> blockchain) {
         //Create the Blocks objects to use next
         Block previous_block, current_block;
 
@@ -134,66 +160,3 @@ public class AuctionRepository {
     }
 }
 
-    /*
-    private ServerSocket server;
-    private static final int PORT = 8090;
-
-    private AuctionRepository() {
-        try {
-            server = new ServerSocket(PORT);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static void main(String[] args) {
-        AuctionRepository example = new AuctionRepository();
-        example.handleConnection();
-    }
-
-    private void handleConnection() {
-
-
-        while (true) {
-            try {
-                Socket socket = server.accept();
-                new ConnectionHandler(socket);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-    class ConnectionHandler implements Runnable {
-        private Socket socket;
-
-        ConnectionHandler(Socket socket) {
-            this.socket = socket;
-
-            Thread t = new Thread(this);
-            t.start();
-        }
-
-        public void run() {
-            Auction auction = new Auction();
-            try {
-
-                ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
-
-                System.out.println((String) ois.readObject());
-
-                ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-                oos.writeObject("Hi...");
-
-                ois.close();
-                 oos.close();
-                socket.close();
-
-                System.out.println("Waiting for client message...");
-            } catch (IOException | ClassNotFoundException e) {
-                e.printStackTrace();
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-}*/

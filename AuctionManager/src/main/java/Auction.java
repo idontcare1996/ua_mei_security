@@ -3,9 +3,46 @@ import java.sql.Timestamp;
 public class Auction {
 
     private String id;
+    private String seller;
     private String product;
-    private String data;
+    private String description;
+    private String settings;
     private Timestamp timestamp;
+    private String hash;
+
+    public Auction(){
+
+    }
+
+    public Auction(String seller, String product, String description, String settings, Timestamp timestamp) {
+        this.seller = seller;
+        this.product = product;
+        this.description = description;
+        this.settings = settings;
+        this.timestamp = timestamp;
+    }
+
+    public Auction(String id, String seller, String product, String description, String settings)
+    {
+        this.id = id;
+        this.seller = seller;
+        this.product = product;
+        this.description = description;
+        this.settings = settings;
+        this.timestamp = new Timestamp(System.currentTimeMillis()); // TO DO: CHANGE THIS TO THE SAME TIME FOR EVERYONE (timezones and accurate times)
+        this.hash = calculateHash();
+    }
+    public String calculateHash(){
+        return Hasher.hashSHA256(id+seller+product+description+settings+
+                (timestamp));
+    }
+    public String getSeller() {
+        return seller;
+    }
+
+    public void setSeller(String seller) {
+        this.seller = seller;
+    }
 
     public String getId() {
         return id;
@@ -23,12 +60,12 @@ public class Auction {
         this.product = product;
     }
 
-    public String getData() {
-        return data;
+    public String getSettings() {
+        return settings;
     }
 
-    public void setData(String data) {
-        this.data = data;
+    public void setSettings(String data) {
+        this.settings = settings;
     }
 
     public Timestamp getTimestamp() {
@@ -39,3 +76,5 @@ public class Auction {
         this.timestamp = timestamp;
     }
 }
+
+
