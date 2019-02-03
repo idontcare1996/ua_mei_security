@@ -9,15 +9,23 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
+import org.apache.commons.codec.binary.Base64;
 
+import javax.crypto.*;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
+import java.security.AlgorithmParameters;
+import java.security.SecureRandom;
 import java.sql.Timestamp;
 import java.util.*;
 
@@ -71,11 +79,19 @@ public class AuctionManager {
 
                 if (auxSettings.isEncryptedBidder()){
                     //Encrypt bidder
-                    receivedBid.setFrom(""/*todo: */);
+                    try {
+                        receivedBid.setFrom(Encrypt(receivedBid.getFrom()));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
                 if (auxSettings.isEncryptedBidValue()){
                     //Encrypt bid value
-                    receivedBid.setBid_value("Encrypted");
+                    try {
+                        receivedBid.setBid_value(Encrypt(receivedBid.getBid_value()));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
                 if (auxSettings.isEncryptedAuthor()){
                     //Encrypt author
@@ -134,7 +150,6 @@ public class AuctionManager {
                     send(stringMessage,RepositoryPort);
                 }catch (Exception en) {
                 }
-
                 // SEND RESPONSE TO CLIENT
                 String response = ("Auction id: " + receivedAuction.getId() + "\n" + "Auction creation timestamp: " + receivedAuction.getTimestamp() + "\n" + "Timestamp reception: " + timestampReception + "\n");
                 System.out.println(response);
@@ -195,6 +210,35 @@ public class AuctionManager {
 
 
     }
+    public static String Encrypt(String word)throws Exception{
+        byte[] ivBytes;
+        String password="Umaqualquer";
+
+        SecureRandom random = new SecureRandom();
+        byte bytes[] = new byte[20];
+        random.nextBytes(bytes);
+        byte[] saltBytes = bytes;
+
+        SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
+        PBEKeySpec spec = new PBEKeySpec(password.toCharArray(),saltBytes,65556,256);
+        SecretKey secretKey = factory.generateSecret(spec);
+        SecretKeySpec secret = new SecretKeySpec(secretKey.getEncoded(), "AES");
+
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+        cipher.init(Cipher.ENCRYPT_MODE, secret);
+        AlgorithmParameters params = cipher.getParameters();
+        ivBytes =   params.getParameterSpec(IvParameterSpec.class).getIV();
+        byte[] encryptedTextBytes = cipher.doFinal(word.getBytes("UTF-8"));
+
+        byte[] buffer = new byte[saltBytes.length + ivBytes.length + encryptedTextBytes.length];
+        System.arraycopy(saltBytes, 0, buffer, 0, saltBytes.length);
+        System.arraycopy(ivBytes, 0, buffer, saltBytes.length, ivBytes.length);
+        System.arraycopy(encryptedTextBytes, 0, buffer, saltBytes.length + ivBytes.length, encryptedTextBytes.length);
+        return new Base64().encodeToString(buffer);
+    }
+
+
+
 
 
 }

@@ -1,6 +1,7 @@
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.sun.net.httpserver.*;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -9,16 +10,19 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 
+import javax.crypto.*;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Scanner;
+import java.util.*;
 
 public class AuctionRepository {
 
@@ -79,7 +83,7 @@ public class AuctionRepository {
                     //System.out.println("Is the blockchain valid: " + isBlockChainValid(blockchain));
                     active_blockchains.put(receivedAuction.getId(), blockchain);
                     System.out.println("actove: "+active_blockchains + "\n" + "  receivedAuction: "+receivedAuction + "\n blockchain: "+blockchain);
-
+                    Timer(receivedAuction.getId());
                     response = ("Auction id: " + receivedAuction.getId() + "\n" + "Auction creation timestamp: " + receivedAuction.getTimestamp() + "\n" + "Timestamp reception: " + timestampReception + "\n");
                     System.out.println(response);
                     break;
@@ -300,6 +304,76 @@ public class AuctionRepository {
         String responseBody = EntityUtils.toString(response.getEntity());
         return responseBody;
     }
+    @SuppressWarnings("static-access")
+    public static String decrypt(String encryptedText) throws Exception {
+        String password="Umaqualquer";
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
 
+        ByteBuffer buffer = ByteBuffer.wrap(new Base64().decode(encryptedText));
+        byte[] saltBytes = new byte[20];
+        buffer.get(saltBytes, 0, saltBytes.length);
+        byte[] ivBytes1 = new byte[cipher.getBlockSize()];
+        buffer.get(ivBytes1, 0, ivBytes1.length);
+        byte[] encryptedTextBytes = new byte[buffer.capacity() - saltBytes.length - ivBytes1.length];
+
+        buffer.get(encryptedTextBytes);
+
+        SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
+        PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), saltBytes, 65556, 256);
+        SecretKey secretKey = factory.generateSecret(spec);
+        SecretKeySpec secret = new SecretKeySpec(secretKey.getEncoded(), "AES");
+        cipher.init(Cipher.DECRYPT_MODE, secret, new IvParameterSpec(ivBytes1));
+        byte[] decryptedTextBytes = null;
+        try {
+            decryptedTextBytes = cipher.doFinal(encryptedTextBytes);
+        } catch (IllegalBlockSizeException e) {
+            e.printStackTrace();
+        } catch (BadPaddingException e) {
+            e.printStackTrace();
+        }
+
+        return new String(decryptedTextBytes);
+
+    }
+    private static void Timer(String auctionId) {
+        Gson gson = new Gson();
+
+        Settings settings = gson.fromJson(active_blockchains.get(auctionId).get(0).auction.getSettings(), Settings.class);
+
+
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                if (settings.isEncryptedBidValue()) {
+                    for (int i = 1; i < active_blockchains.get(auctionId).size(); i++) {
+                        try {
+                            active_blockchains.get(auctionId).get(i).bid.setBid_value(decrypt(active_blockchains.get(auctionId).get(i).bid.getBid_value()));
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+                if (settings.isEncryptedBidder()) {
+                    for (int i = 1; i < active_blockchains.get(auctionId).size(); i++) {
+                        try {
+                            active_blockchains.get(auctionId).get(i).bid.setFrom(decrypt(active_blockchains.get(auctionId).get(i).bid.getFrom()));
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+                for (int i = 1; i < active_blockchains.get(auctionId).size(); i++) {
+                    try {
+                        active_blockchains.get(auctionId).get(i).bid.setFrom(decrypt(active_blockchains.get(auctionId).get(i).bid.getFrom()));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+               // blockchain.add()
+
+            }
+        }, settings.getTime() * 60 * 1000);
+    }
 }
 
