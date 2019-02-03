@@ -3,19 +3,19 @@ public class Settings {
     private double minimumIncrement;
     private double maximumIncrement;
     private boolean encryptedBidder;
-    private boolean encryptedBidVale;
+    private boolean encryptedBidValue;
     private int time;
     private boolean encryptedAuthor;
 
     public Settings() {
     }
 
-    public Settings(double initialValue, double minimumIncrement, double maximumIncrement, boolean encryptedBidder, boolean encryptedBidVale, int time, boolean encrytedAuthor) {
+    public Settings(double initialValue, double minimumIncrement, double maximumIncrement, boolean encryptedBidder, boolean encryptedBidValue, int time, boolean encrytedAuthor) {
         this.initialValue = initialValue;
         this.minimumIncrement = minimumIncrement;
         this.maximumIncrement = maximumIncrement;
         this.encryptedBidder = encryptedBidder;
-        this.encryptedBidVale = encryptedBidVale;
+        this.encryptedBidValue = encryptedBidValue;
         this.time = time;
         this.encryptedAuthor = encrytedAuthor;
     }
@@ -52,12 +52,12 @@ public class Settings {
         this.encryptedBidder = encryptedBidder;
     }
 
-    public boolean isEncryptedBidVale() {
-        return encryptedBidVale;
+    public boolean isEncryptedBidValue() {
+        return encryptedBidValue;
     }
 
-    public void setEncryptedBidVale(boolean encryptedBidVale) {
-        this.encryptedBidVale = encryptedBidVale;
+    public void setEncryptedBidValue(boolean encryptedBidValue) {
+        this.encryptedBidValue = encryptedBidValue;
     }
 
     public int getTime() {

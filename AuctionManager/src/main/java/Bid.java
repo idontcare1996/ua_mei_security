@@ -3,12 +3,12 @@ import java.sql.Timestamp;
 public class Bid {
 
     private String auction_number;
-    private Long bid_value;
+    private String bid_value;
     private String from;
     private Timestamp timestamp;
     private String hash;
 
-    public Bid(String auction_number, Long bid_value, String from)
+    public Bid(String auction_number, String bid_value, String from)
     {
         this.auction_number = auction_number;
         this.bid_value = bid_value;
@@ -30,11 +30,11 @@ public class Bid {
         this.auction_number = auction_number;
     }
 
-    public Long getBid_value() {
+    public String getBid_value() {
         return bid_value;
     }
 
-    public void setBid_value(Long bid_value) {
+    public void setBid_value(String bid_value) {
         this.bid_value = bid_value;
     }
 

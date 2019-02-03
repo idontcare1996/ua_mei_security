@@ -66,8 +66,9 @@ public class AuctionManager {
                     //Encrypt bidder
                     receivedBid.setFrom(""/*todo: */);
                 }
-                if (auxSettings.isEncryptedBidVale()){
+                if (auxSettings.isEncryptedBidValue()){
                     //Encrypt bid value
+                    receivedBid.setBid_value("Encrypted");
 
                 }
                 if (auxSettings.isEncryptedAuthor()){
