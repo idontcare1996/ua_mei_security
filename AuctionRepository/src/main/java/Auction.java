@@ -10,18 +10,6 @@ public class Auction {
     private Timestamp timestamp;
     private String hash;
 
-    public Auction(){
-
-    }
-
-    public Auction(String seller, String product, String description, String settings, Timestamp timestamp) {
-        this.seller = seller;
-        this.product = product;
-        this.description = description;
-        this.settings = settings;
-        this.timestamp = timestamp;
-    }
-
     public Auction(String id, String seller, String product, String description, String settings)
     {
         this.id = id;

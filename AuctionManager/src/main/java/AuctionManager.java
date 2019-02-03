@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.UUID;
 
 
 public class AuctionManager {
@@ -62,6 +63,11 @@ public class AuctionManager {
             Auction receivedAuction = gson.fromJson(receivedMessage.getData(), Auction.class);
 
             Settings receivedSettings = gson.fromJson(receivedAuction.getSettings(), Settings.class);
+
+            //DÁ-LHE UM UUID
+            UUID uuid = UUID.randomUUID();
+            receivedAuction.setId(uuid.toString());
+            System.out.println(receivedAuction.getId());
 
             //Guarda os settings
 

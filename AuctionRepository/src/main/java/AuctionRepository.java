@@ -42,34 +42,43 @@ public class AuctionRepository {
         if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
             System.out.println(" \n          POST ");
             String received = "";
-
+            String response = "";
             received = convert(exchange.getRequestBody(), Charset.forName("UTF-8"));
-
+            System.out.println(received);
             Gson gsonreceived = new Gson();
+            System.out.println("Hello fam");
+            Message message = gsonreceived.fromJson(received, Message.class);
+            switch (message.getAction()) {
 
-            Auction receivedAuction = gsonreceived.fromJson(received, Auction.class);
-            System.out.println( receivedAuction.getId());
+                case "validate":
+                Auction receivedAuction = gsonreceived.fromJson(message.getData(), Auction.class);
+                System.out.println(receivedAuction.getId());
 
-            //SEND THIS TO THE BLOCk
+                //SEND THIS TO THE BLOCk
 
-            //Adding the genesis block to the blockchain
-            blockchain.add(new Block(receivedAuction,"0")); // First block's previous hash is 0 because it's the genesis block.
+                //Adding the genesis block to the blockchain
+                blockchain.add(new Block(receivedAuction, "0")); // First block's previous hash is 0 because it's the genesis block.
+                blockchain.add(new Block(receivedAuction,(blockchain.get(blockchain.size()-1).hash)));
+                //Stores the blockchain in JSON format, with PrettyPrinting on(facilitating human reading).
+                String blockchainJSON = new GsonBuilder().setPrettyPrinting().create().toJson(blockchain);
 
-            //Stores the blockchain in JSON format, with PrettyPrinting on(facilitating human reading).
-            String blockchainJSON = new GsonBuilder().setPrettyPrinting().create().toJson(blockchain);
+                //Prints the JSON
+                System.out.println(blockchainJSON);
 
-            //Prints the JSON
-            System.out.println(blockchainJSON);
+                System.out.println("Is the blockchain valid: " + isBlockChainValid(blockchain));
+                active_blockchains.put(receivedAuction.getId(), blockchain);
 
-            System.out.println("Is the blockchain valid: "+isBlockChainValid(blockchain));
+                response = ("Auction id: " + receivedAuction.getId() + "\n" + "Auction creation timestamp: " + receivedAuction.getTimestamp() + "\n" + "Timestamp reception: " + timestampReception + "\n");
+                System.out.println(response);
+                case "List":
+                    System.out.println("listing...");
+                    response = gsonreceived.toJson(active_blockchains);
 
-
-
-
-            String response = ("Auction id: " + receivedAuction.getId() + "\n" + "Auction creation timestamp: " + receivedAuction.getTimestamp() + "\n" + "Timestamp reception: " + timestampReception + "\n");
+                case "listInBids":
+                    System.out.println("listing...");
+                    response = gsonreceived.toJson(active_blockchains);
+            }//USAR O receivedAuction.get(...) para usar os dados no repositório e no manager
             System.out.println(response);
-            //USAR O receivedAuction.get(...) para usar os dados no repositório e no manager
-
             //envio a resposta ao pedido de Post, neste caso, metendo esta string construída com o que se obtem do novo objecto Auction
             exchange.sendResponseHeaders(200, response.length());
             OutputStream os = exchange.getResponseBody();
@@ -82,17 +91,21 @@ public class AuctionRepository {
         if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
             System.out.println(" GET ");
 
-            String received = "";
             String response = "";
 
             //Figure out what they want with this GET method
             //TO DO: DO SOMETHING WITH THE GET REQUEST
-            received = convert(exchange.getRequestBody(), Charset.forName("UTF-8"));
+            System.out.println("why 3 gets?");
+            System.out.println(exchange);
+            String received = convert(exchange.getRequestBody(), Charset.forName("UTF-8"));
+            System.out.println(received);
             Gson gsonReceived = new Gson();
             Message message = gsonReceived.fromJson(received, Message.class);
+            System.out.println(message.getData());
             switch (message.getAction()) {
-                case "list":
+                case "List":
                 response = gsonReceived.toJson(active_blockchains);
+                    System.out.println("succ");
                 case "e":
             }
             //response = "We received your GET request. Unfortunately, Madaíl hasn't done this part yet and I'm tired \n " + "Time: " + timestampReception;

@@ -3,6 +3,7 @@
 */
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
@@ -17,7 +18,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Type;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Scanner;
 
 //IO stuff
@@ -49,6 +54,10 @@ public class AuctionClient {
     private JCheckBox settingsAuthor;
     private JPanel auctionListTabPane;
     private JButton listMeTheStuffButton;
+    private JList listAuction;
+    private JButton refreshButton;
+    private JComboBox comboBoxAuction;
+    private JList list1;
 
     String ccNumber = "12345678";
     public static void main(String[] args) throws Exception {
@@ -155,7 +164,7 @@ public class AuctionClient {
                 String stringMessage = gson.toJson(message);
                 System.out.println(stringMessage);
                 try {
-                    send(stringMessage);
+                    send(stringMessage, "8500");
                 }catch (Exception en) {
                 }
 
@@ -176,15 +185,31 @@ public class AuctionClient {
             }
         });
         listMeTheStuffButton.addActionListener(new ActionListener() {
+                        @Override
+                        public void actionPerformed(ActionEvent e) {
+
+                            Auction auction = new Auction();
+                            Message message = new Message("Auction", "List", "List me the shit fam");
+                            Gson gson = new Gson();
+                            String stringMessage = gson.toJson(message);
+                            //System.out.println(message);
+                            try {
+                                send(stringMessage, "8501");
+                }catch (Exception en2) {
+                }
+            }
+        });
+        refreshButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
 
                 Auction auction = new Auction();
-                Message message = new Message("Auction", "List", "List me the shit fam");
+                Message message = new Message("Auction", "listInBids", "List me the shit fam");
                 Gson gson = new Gson();
                 String stringMessage = gson.toJson(message);
+                //System.out.println(message);
                 try {
-                    ask(stringMessage);
+                    send(stringMessage, "8501");
                 }catch (Exception en2) {
                 }
             }
@@ -217,7 +242,7 @@ public class AuctionClient {
         }
     }
 
-    private void send(String message2send) throws Exception{
+    private void send(String message2send, String port) throws Exception{
 
 
         // HTTP code
@@ -225,12 +250,36 @@ public class AuctionClient {
                 ContentType.APPLICATION_JSON);
 
         HttpClient httpClient = HttpClientBuilder.create().build(); //todo; change ports send(message, port)
-        HttpPost request = new HttpPost("http://localhost:8500/security"); //COLOCAR ISTO MAIS PARA CIMA, NUMA COISA TIPO #DEFINE
+        HttpPost request = new HttpPost("http://localhost:"+port+"/security"); //COLOCAR ISTO MAIS PARA CIMA, NUMA COISA TIPO #DEFINE
         request.setEntity(entity);
 
+        Gson gson = new Gson();
 
         HttpResponse response = httpClient.execute(request);
+        Message message = gson.fromJson(message2send, Message.class);
+        System.out.println(message.getAction());
+        switch (message.getAction()){
+            case "listInBids":
+                System.out.println(";:)");
+
+                Type type = new TypeToken<HashMap<String, ArrayList<Block>>>(){}.getType();
+
+                String responseBody = convert(response.getEntity().getContent(),Charset.forName("UTF-8"));
+                System.out.println("response:"+responseBody);
+                HashMap<String, ArrayList<Block>> active_blockchains = gson.fromJson(responseBody, type);
+
+                System.out.println(active_blockchains.size());
+                for (HashMap.Entry<String, ArrayList<Block>> entry : active_blockchains.entrySet()) {
+
+                    String key = entry.getKey();
+                    ArrayList<Block> value = entry.getValue();
+                    System.out.println(value.get(0).auction.getProduct());
+                    comboBoxAuction.addItem(value.get(0).auction.getProduct());
+                    // ...
+                }
+        }
         String responseBody = EntityUtils.toString(response.getEntity());
+
 
         POSTtextpane.setText(responseBody + "\n\n" + POSTtextpane.getText()); //todo: get this out of here, into the gui part of the code
 
@@ -260,13 +309,13 @@ public class AuctionClient {
         StringEntity entity = new StringEntity(what, ContentType.APPLICATION_JSON);
 
         HttpClient httpClient = HttpClientBuilder.create().build();
-        HttpGet request = new HttpGet("http://localhost:8500/security"); //COLOCAR ISTO MAIS PARA CIMA, NUMA COISA TIPO #DEFINE
+        HttpGet request = new HttpGet("http://localhost:8501/security/?list=all"); //COLOCAR ISTO MAIS PARA CIMA, NUMA COISA TIPO #DEFINE
 
 
 
         HttpResponse response = httpClient.execute(request);
         String responseBody = EntityUtils.toString(response.getEntity());
-
+        System.out.println(responseBody);
         GETtextplane.setText(responseBody + "\n\n" + GETtextplane.getText());
     }
 }
