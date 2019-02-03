@@ -1,0 +1,73 @@
+INCLUDE_DIR=../include/opensc
+
+include ../../../mac/versions.mac
+
+CC=     gcc
+CFLAGS= -DHAVE_GUI -DHAVE_CONFIG_H -DPIC -D__APPLE__ -DHAVE_PCSC -D__OLD_PCSC_API__ -DHAVE_OPENSSL -fno-strict-aliasing -g -O2 -no-cpp-precomp -MD -MP  -c -fno-common -I. -I../.. -I../include
+LFLAGS= -dynamiclib ${wl}-flat_namespace -lz  -Wl,-framework -Wl,PCSC -lcrypto
+
+OBJS=	../scdl/scdl.o \
+	debug.o scrandom.o openssl.o \
+	libpkcs11.o misc.o secretkey.o mechanism.o pkcs11-display.o slot.o \
+	pkcs11-object.o pkcs11-session.o pkcs11-global.o \
+	framework-pkcs15.o framework-pkcs15init.o
+
+LIB_DIR=$(INSTALL_DIR)/lib
+
+INSTALL_HEADERS=scrandom.h pkcs11.h
+HEADERS=$(INSTALL_HEADERS) pkcs11-display.h sc-pkcs11.h
+INCLUDE_DIR=../include/opensc
+RSA_INC_DIR=$(INCLUDE_DIR)/rsaref
+
+all: copy_headers $(PKCS11_NAME_x_y_z_dylib) make_bundle
+
+clean:
+	- rm *.o
+	- rm *.d
+	- rm *.dylib
+
+install:
+	cp -f $(PKCS11_NAME_x_y_z_dylib) $(LIB_DIR)/
+	ln -f -s $(LIB_DIR)/$(PKCS11_NAME_x_y_z_dylib) $(LIB_DIR)/$(PKCS11_NAME_x_y_dylib)
+	ln -f -s $(LIB_DIR)/$(PKCS11_NAME_x_y_dylib) $(LIB_DIR)/$(PKCS11_NAME_x_dylib)
+	ln -f -s $(LIB_DIR)/$(PKCS11_NAME_x_dylib) $(LIB_DIR)/$(PKCS11_NAME_dylib)
+	- rm -rf $(LIB_DIR)/pteidpkcs11.bundle
+	cp -r pteidpkcs11.bundle $(LIB_DIR)/pteidpkcs11.bundle
+	ln -f -s $(LIB_DIR)/$(PKCS11_NAME_x_dylib) $(LIB_DIR)/pteidpkcs11.bundle/Contents/MacOS/$(PKCS11_NAME_dylib)
+
+uninstall:
+	test $(LIB_DIR)/$(PKCS11_NAME_dylib) && rm -f $(LIB_DIR)/$(PKCS11_NAME_dylib)
+	test $(LIB_DIR)/$(PKCS11_NAME_x_dylib) && rm -f $(LIB_DIR)/$(PKCS11_NAME_x_dylib)
+	test $(LIB_DIR)/$(PKCS11_NAME_x_y_dylib) && rm -f $(LIB_DIR)/$(PKCS11_NAME_x_y_dylib)
+	test $(LIB_DIR)/$(PKCS11_NAME_x_y_z_dylib) && rm -f $(LIB_DIR)/$(PKCS11_NAME_x_y_z_dylib)
+	rm -rf $(LIB_DIR)/pteidpkcs11.bundle
+
+$(PKCS11_NAME_x_y_z_dylib): $(OBJS) ../libopensc/$(LIBOPENSC_NAME_x_y_z_dylib)
+	$(CC) $(LFLAGS) $(OBJS) ../libopensc/$(LIBOPENSC_NAME_x_y_z_dylib) \
+		-install_name $(PKCS11_NAME_x_dylib) -o $(PKCS11_NAME_x_y_z_dylib) \
+		-compatibility_version $(PKCS11_COMPAT_VERSION) -current_version $(PKCS11_CURR_VERSION)
+	ln -f -s $(PKCS11_NAME_x_y_z_dylib) $(PKCS11_NAME_x_y_dylib)
+	ln -f -s $(PKCS11_NAME_x_y_dylib) $(PKCS11_NAME_x_dylib)
+	ln -f -s $(PKCS11_NAME_x_dylib) $(PKCS11_NAME_dylib)
+
+make_bundle:
+	- rm -rf $(PKCS11_NAME).bundle
+	cp -r ../../../mac/$(PKCS11_NAME).bundle pteidpkcs11.bundle
+	rm -rf $(PKCS11_NAME).bundle/CVS $(PKCS11_NAME).bundle/Contents/CVS $(PKCS11_NAME).bundle/Contents/MacOS/CVS
+	sed "s;PTEIDPKCS11_NAME_DYLIB;$(PKCS11_NAME_dylib);g" $(PKCS11_NAME).bundle/Contents/Info.plist > tmp
+	mv -f tmp $(PKCS11_NAME).bundle/Contents/Info.plist
+
+$(OBJS): $(HEADERS)
+
+copy_headers:
+	if test $(INCLUDE_DIR)/scrandom.h -ot scrandom.h; then cp -f scrandom.h $(INCLUDE_DIR); fi;
+	if test $(INCLUDE_DIR)/pkcs11.h -ot pkcs11.h; then cp -f pkcs11.h $(INCLUDE_DIR); fi;
+	#cp rsaref/pkcs11.h $(RSA_INC_DIR)
+	#cp rsaref/pkcs11t.h $(RSA_INC_DIR)
+	#cp rsaref/pkcs11f.h $(RSA_INC_DIR)
+	#cp rsaref/unix.h $(RSA_INC_DIR)
+	if test $(RSA_INC_DIR)/pkcs11.h -ot rsaref/pkcs11.h; then cp -f rsaref/pkcs11.h $(RSA_INC_DIR); fi;
+	if test $(RSA_INC_DIR)/pkcs11t.h -ot rsaref/pkcs11t.h; then cp -f rsaref/pkcs11t.h $(RSA_INC_DIR); fi;
+	if test $(RSA_INC_DIR)/pkcs11f.h -ot rsaref/pkcs11f.h; then cp -f rsaref/pkcs11f.h $(RSA_INC_DIR); fi;
+	if test $(RSA_INC_DIR)/unix.h -ot rsaref/unix.h; then cp -f rsaref/unix.h $(RSA_INC_DIR); fi;
+
