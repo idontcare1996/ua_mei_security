@@ -16,6 +16,8 @@ import org.apache.http.util.EntityUtils;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Type;
@@ -52,73 +54,32 @@ public class AuctionClient {
     private JPanel auctionListTabPane;
     private JButton listMeTheStuffButton;
     private JEditorPane editorPane1;
-    private JList listAuction;
     private JButton refreshButton;
     private JComboBox comboBoxAuction;
-    private JList list1;
+    private JTextField textFieldDescription;
+    private JEditorPane editorPane2;
 
     String ccNumber = "12345678";
     Integer RepositoryPort = 8501;
     Integer ManagerPort = 8500;
+
+    private static HashMap<String, ArrayList<Block>> active_blockchains = new HashMap<>();
+    private static HashMap<String, ArrayList<Block>> terminatedBlockchain = new HashMap<>();
+
+
+
     public static void main(String[] args) throws Exception {
 
-    //Start the GUI
+        //Start the GUI
         JFrame frame = new JFrame("Auction Client");
         frame.setContentPane(new AuctionClient().panel1);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
         frame.setVisible(true);
 
-    // Testing the creation of messages in JSON format
-
-        // Create new auction
-        // public Auction(String id, String type, String seller,String product, String settings)
+        //Grab the latest repositories from the AuctionRepository
 
 
-        // Create the auction message with the created auction
-        // public JsonObject AuctionMessage(String id, String author, String action, Auction auction)
-
-
-
-
-        /*
-        Auction auction = new Auction();
-
-
-        Gson gson = new Gson();
-        auction.setId("Hu7uh8hihy7h8jhih");
-        auction.setData("Etruscan ceramic sculpture of a boar");
-        auction.setProduct("Boar Sculpture 500BC");
-        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        auction.setTimestamp(timestamp);
-        String jAuction = gson.toJson(auction);
-
-        System.out.println(auction);
-        System.out.println(jAuction);
-        try {
-            InetAddress host = InetAddress.getLocalHost();
-            Socket socket = new Socket(host.getHostName(), 7777);
-
-            ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-            oos.writeObject(jAuction);
-            ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
-            String message = (String) ois.readObject();
-            System.out.println("Message: " + message);
-
-            ois.close();
-            oos.close();
-
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }/*
-        Auction auction = createDummyObject();
-
-        // Convert object to JSON string
-        Gson gson = new Gson();
-        String json = gson.toJson(auction);
-        //Print the json string
-        System.out.println(json);
-        */
 
     }
 
@@ -128,20 +89,8 @@ public class AuctionClient {
             @Override
             public void actionPerformed(ActionEvent e) {
 
-
                 Gson gson = new Gson();
-                //Default
-                /*String auctionType = "Closed";
-                boolean encryptedBidder = true;
-                boolean encryptedBidValue = true;
-                boolean encryptedAuthor = true;
 
-                if (auctionTypeOpen.isSelected()){
-                    auctionType = "Open";
-                    encryptedBidder = false;
-                    encryptedBidValue = false;
-                    encryptedAuthor = false;
-                }*/
                 Settings settings = new Settings(
                         Double.parseDouble(settingsValue.getText()),
                         Double.parseDouble(settingsMinimum.getText()),
@@ -164,28 +113,43 @@ public class AuctionClient {
                 String stringMessage = gson.toJson(message);
                 System.out.println(stringMessage);
                 try {
-                    String result = send(stringMessage,ManagerPort);
+                    String result = postMessage(stringMessage, ManagerPort);
                     System.out.println(result);
-                    editorPane1.setText( editorPane1.getText() + "\n\n" +  result);
-                }catch (Exception en) {
+                    editorPane1.setText(editorPane1.getText() + "\n\n" + result);
+                } catch (Exception en) {
                 }
 
             }
         });
 
         listMeTheStuffButton.addActionListener(new ActionListener() {
-                        @Override
-                        public void actionPerformed(ActionEvent e) {
+            @Override
+            public void actionPerformed(ActionEvent e) {
 
-                            Auction auction = new Auction();
-                            Message message = new Message("Auction", "List", "List me the shit fam");
-                            Gson gson = new Gson();
-                            String stringMessage = gson.toJson(message);
-                            //System.out.println(message);
-                            try {
-                                send(stringMessage, RepositoryPort);
-                }catch (Exception en2) {
+                String stringMessage = "";
+
+                try {
+                    stringMessage = (getMessage("open",RepositoryPort));
+                } catch (Exception en2) {
                 }
+                Gson gson = new Gson();
+                Type type = new TypeToken<HashMap<String, ArrayList<Block>>>(){}.getType();
+
+                System.out.println("response:"+stringMessage);
+                HashMap<String, ArrayList<Block>> active_blockchains = gson.fromJson(stringMessage, type);
+
+                System.out.println(active_blockchains.size());
+                for (HashMap.Entry<String, ArrayList<Block>> entry : active_blockchains.entrySet()) {
+
+                    String key = entry.getKey();
+                    ArrayList<Block> value = entry.getValue();
+                    System.out.println(value.get(0).auction.getProduct());
+                    String seller = value.get(0).auction.getSeller();
+                    String product = value.get(0).auction.getProduct();
+                    editorPane2.setText(editorPane2.getText() + "\n" + "Seller: "+seller+"  Product: "+product);
+                    // ...
+                }
+
             }
         });
         refreshButton.addActionListener(new ActionListener() {
@@ -198,32 +162,45 @@ public class AuctionClient {
                 String stringMessage = gson.toJson(message);
                 //System.out.println(message);
                 try {
+                    //Copies the response from the POST to a string
+                    String auctionstring = postMessage(stringMessage, RepositoryPort);
+                    System.out.println(auctionstring);
 
-                    send(stringMessage, RepositoryPort);
-                }catch (Exception en2) {
+                    //Sets a type, to use in the gson.fromJson
+                    Type type = new TypeToken<HashMap<String, ArrayList<Block>>>(){}.getType();
+
+                    //refreshes the client's active_blockchain.
+                    active_blockchains = gson.fromJson(auctionstring, type);
+                    comboBoxAuction.removeAllItems();
+
+                    for (HashMap.Entry<String, ArrayList<Block>> entry : active_blockchains.entrySet()) {
+
+                        String key = entry.getKey();
+                        ArrayList<Block> value = entry.getValue();
+                        String product = (value.get(0).auction.getProduct());
+                        String uuid = (value.get(0).auction.getId());
+                        comboBoxAuction.addItem(product+"   <"+uuid+">");
+                    }
+
+
+                } catch (Exception en2) {
                 }
             }
         });
+        comboBoxAuction.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                String chosen_auction = comboBoxAuction.getSelectedItem().toString();
+                String uuid = (chosen_auction.substring(chosen_auction.indexOf("<")+1));
+                uuid = uuid.substring(0, uuid.length() - 1);
+                textFieldDescription.setText(uuid);
+
+            }
+        });
+
     }
 
 
-    // Create a new auction
-
-    /*
-    private String AuctionMessage(String id, String author, String type,String action, String data)
-    {
-        JsonObject auctionmessage = new JsonObject();
-        // Put stuff inside json
-        return auctionmessage;
-    }
-
-    private String AuctionMessage(String id, String author, String action, Bid bid)
-    {
-        JsonObject bidmessage = new JsonObject();
-
-        return bidmessage;
-    }
-    */
 
     public static String convert(InputStream inputStream, Charset charset) throws IOException {
 
@@ -232,23 +209,22 @@ public class AuctionClient {
         }
     }
 
-    private String send(String message2send,Integer port) throws Exception{
+    private String postMessage(String mensage, Integer port) throws Exception {
 
 
         // HTTP code
-        StringEntity entity = new StringEntity(message2send,
-                ContentType.APPLICATION_JSON);
+        StringEntity entity = new StringEntity(mensage, ContentType.APPLICATION_JSON);
 
-        HttpClient httpClient = HttpClientBuilder.create().build(); //todo; change ports send(message, port)
-        HttpPost request = new HttpPost("http://localhost:"+port+"/security"); //COLOCAR ISTO MAIS PARA CIMA, NUMA COISA TIPO #DEFINE
+        HttpClient httpClient = HttpClientBuilder.create().build();
+        HttpPost request = new HttpPost("http://localhost:" + port + "/security");
         request.setEntity(entity);
 
         Gson gson = new Gson();
 
         HttpResponse response = httpClient.execute(request);
-        Message message = gson.fromJson(message2send, Message.class);
-        System.out.println(message.getAction());
-        switch (message.getAction()){
+        //Message message = gson.fromJson(mensage, Message.class);
+        //System.out.println(message.getAction());
+        /*switch (message.getAction()){
             case "listInBids":
                 System.out.println(";:)");
 
@@ -267,29 +243,22 @@ public class AuctionClient {
                     comboBoxAuction.addItem(value.get(0).auction.getProduct());
                     // ...
                 }
-        }
+        }*/
         String responseBody = EntityUtils.toString(response.getEntity());
-
-
-        POSTtextpane.setText(responseBody + "\n\n" + POSTtextpane.getText()); //todo: get this out of here, into the gui part of the code
-
-
-            return responseBody;
+        return responseBody;
     }
-    private void ask(String what,Integer port) throws Exception{
-        // HTTP code
-        StringEntity entity = new StringEntity(what, ContentType.APPLICATION_JSON);
+
+    private String getMessage(String query, Integer port) throws Exception {
 
         HttpClient httpClient = HttpClientBuilder.create().build();
-        HttpGet request = new HttpGet("http://localhost:8501/security/?list=all"); //COLOCAR ISTO MAIS PARA CIMA, NUMA COISA TIPO #DEFINE
-
-
+        HttpGet request = new HttpGet("http://localhost:" + port + "/security?=" + query);
 
         HttpResponse response = httpClient.execute(request);
         String responseBody = EntityUtils.toString(response.getEntity());
         System.out.println(responseBody);
-        GETtextplane.setText(responseBody + "\n\n" + GETtextplane.getText());
+        return responseBody;
     }
+
 }
 
 

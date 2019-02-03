@@ -88,28 +88,27 @@ public class AuctionRepository {
 
         }
 
-        if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
-            System.out.println(" GET ");
+        if(exchange.getRequestMethod().equalsIgnoreCase("GET"))
+        {
+            System.out.println("GET");
 
-            String response = "";
+            URI uri = exchange.getRequestURI();
 
-            //Figure out what they want with this GET method
-            //TO DO: DO SOMETHING WITH THE GET REQUEST
-            System.out.println("why 3 gets?");
-            System.out.println(exchange);
-            String received = convert(exchange.getRequestBody(), Charset.forName("UTF-8"));
-            System.out.println(received);
-            Gson gsonReceived = new Gson();
-            Message message = gsonReceived.fromJson(received, Message.class);
-            System.out.println(message.getData());
-            switch (message.getAction()) {
-                case "List":
-                response = gsonReceived.toJson(active_blockchains);
-                    System.out.println("succ");
-                case "e":
+            System.out.println("uri: "+uri.getQuery());
+
+            String response;
+            if(uri.getQuery().equals("=open"))
+            {
+                //send both repositories
+
+                response = new GsonBuilder().setPrettyPrinting().create().toJson(active_blockchains);
+
+
             }
-            //response = "We received your GET request. Unfortunately, Madaíl hasn't done this part yet and I'm tired \n " + "Time: " + timestampReception;
-            //System.out.println(response);
+            else {
+                response = "We received your GET request. Unfortunately, Madaíl hasn't done this part yet and I'm tired \n " + "Time: " + timestampReception;
+            }
+            System.out.println("response:" + response);
             exchange.sendResponseHeaders(200, response.getBytes().length);
             OutputStream os = exchange.getResponseBody();
             os.write(response.getBytes());

@@ -1,4 +1,5 @@
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.sun.net.httpserver.*;
 
 import java.io.IOException;
@@ -9,6 +10,7 @@ import java.net.URI;
 import java.nio.charset.Charset;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Scanner;
 
 
@@ -47,9 +49,10 @@ public class Repository {
         */
 
         // HTTP SERVER STUFF
-        HttpServer server = HttpServer.create(new InetSocketAddress(8500), 0);
-        HttpContext context = server.createContext("/example");
+        HttpServer server = HttpServer.create(new InetSocketAddress(8501), 0);
+        HttpContext context = server.createContext("/security");
         context.setHandler(Repository::handleRequest);
+
         server.start();
 
 
@@ -60,7 +63,7 @@ public class Repository {
     }
     private static void handleRequest(HttpExchange exchange) throws IOException {
         Timestamp timestampReception = new Timestamp(System.currentTimeMillis());
-        URI requestURI = exchange.getRequestURI();
+
         //printRequestInfo(exchange);
         //String response = "This is the response at " + requestURI;
         if(exchange.getRequestMethod().equalsIgnoreCase("POST"))
@@ -88,16 +91,29 @@ public class Repository {
 
         if(exchange.getRequestMethod().equalsIgnoreCase("GET"))
         {
-            System.out.println( " GET ");
+            System.out.println("GET");
 
-            String received = "";
-            String response = "";
+            URI uri = exchange.getRequestURI();
 
-            //Figure out what they want with this GET method
-            //TO DO: DO SOMETHING WITH THE GET REQUEST
+            System.out.println("uri: "+uri.getQuery());
 
-            response = "We received your GET request. Unfortunately, Madaíl hasn't done this part yet and I'm tired \n " + "Time: " + timestampReception;
-            System.out.println(response);
+            String response;
+            if(uri.getQuery().equals("=open"))
+            {
+                //send both repositories
+                Auction auctiontest = new Auction("id","type","seller","product","settings");
+                Auction auctiontest2 = new Auction("id2","type2","seller2","product2","settings2");
+                HashMap<String,Auction> hashmap = new HashMap<>();
+                hashmap.put(auctiontest.getId(),auctiontest);
+                hashmap.put(auctiontest2.getId(),auctiontest2);
+                response = new GsonBuilder().setPrettyPrinting().create().toJson(hashmap);
+
+
+            }
+            else {
+                 response = "We received your GET request. Unfortunately, Madaíl hasn't done this part yet and I'm tired \n " + "Time: " + timestampReception;
+            }
+            System.out.println("response:" + response);
             exchange.sendResponseHeaders(200, response.getBytes().length);
             OutputStream os = exchange.getResponseBody();
             os.write(response.getBytes());
