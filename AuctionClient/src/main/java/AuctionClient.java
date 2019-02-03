@@ -14,10 +14,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 
 import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
+import java.awt.event.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Type;
@@ -52,14 +49,19 @@ public class AuctionClient {
     private JCheckBox settingsBidValue;
     private JCheckBox settingsAuthor;
     private JPanel auctionListTabPane;
-    private JButton listMeTheStuffButton;
+    private JButton openUpdateButton;
     private JEditorPane editorPane1;
     private JButton refreshButton;
     private JComboBox comboBoxAuction;
-    private JTextField textFieldDescription;
-    private JEditorPane editorPane2;
+    private JTextField textFieldUUID;
+    private JEditorPane editorPaneOpenAuctionsList;
     private JButton bidButton;
     private JTextField bidValue;
+    private JEditorPane editorPane3;
+    private JButton closedUpdateButton;
+    private JEditorPane editorPaneClosedAuctionsList;
+    private JComboBox comboBoxTerminate;
+    private JButton terminateButton;
 
     String ccNumber = "12345678";
     Integer RepositoryPort = 8501;
@@ -111,7 +113,7 @@ public class AuctionClient {
 
                 String stringAuction = gson.toJson(auction);
                 System.out.println(stringAuction);
-                Message message = new Message("Auction", "validate", stringAuction);
+                Message message = new Message("Auction", "addAuction", stringAuction);
                 String stringMessage = gson.toJson(message);
                 System.out.println(stringMessage);
                 try {
@@ -124,35 +126,11 @@ public class AuctionClient {
             }
         });
 
-        listMeTheStuffButton.addActionListener(new ActionListener() {
+        openUpdateButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
 
-                String stringMessage = "";
-
-                try {
-                    stringMessage = (getMessage("open",RepositoryPort));
-                } catch (Exception en2) {
-                }
-                Gson gson = new Gson();
-                Type type = new TypeToken<HashMap<String, ArrayList<Block>>>(){}.getType();
-
-                System.out.println("response:"+stringMessage);
-                HashMap<String, ArrayList<Block>> active_blockchains = gson.fromJson(stringMessage, type);
-
-                System.out.println(active_blockchains.size());
-                editorPane2.setText("");
-                for (HashMap.Entry<String, ArrayList<Block>> entry : active_blockchains.entrySet()) {
-
-                    String key = entry.getKey();
-                    ArrayList<Block> value = entry.getValue();
-                    System.out.println(value.get(0).auction.getProduct());
-                    String seller = value.get(0).auction.getSeller();
-                    String product = value.get(0).auction.getProduct();
-                    String uuid = key;
-                    editorPane2.setText(editorPane2.getText() + "\n\n" + "Seller: "+seller+"  Product: "+product+"\n    UUID:<"+uuid+">");
-                    // ...
-                }
+               refreshOpenAuctions();
 
             }
         });
@@ -198,7 +176,7 @@ public class AuctionClient {
                 String chosen_auction = comboBoxAuction.getSelectedItem().toString();
                 String uuid = (chosen_auction.substring(chosen_auction.indexOf("<")+1));
                 uuid = uuid.substring(0, uuid.length() - 1);
-                textFieldDescription.setText(uuid);
+                textFieldUUID.setText(uuid);
 
             }
         });
@@ -206,29 +184,79 @@ public class AuctionClient {
             @Override
             public void actionPerformed(ActionEvent e) {
 
-                    Gson gson = new Gson();
-                    System.out.println(textFieldDescription.getText());
-                    Bid bid = new Bid(textFieldDescription.getText(),
-                            Long.parseLong(bidValue.getText()),
-                            "Author");//todo: from
-                    String auctionBid = gson.toJson(bid);
+                Gson gson = new Gson();
 
 
-                    Message message = new Message("Bid", "Add", auctionBid);
-                    String stringMessage = gson.toJson(message);
-                    System.out.println(stringMessage);
-                    try {
-                        String result = postMessage(stringMessage, RepositoryPort);
-                        System.out.println(result);
-                        //editorPane1.setText(editorPane1.getText() + "\n\n" + result);
-                    } catch (Exception en) {
-                    }
+                Bid bid = new Bid(textFieldUUID.getText(),bidValue.getText(),ccNumber);
+
+                String stringBid = gson.toJson(bid);
+                System.out.println(stringBid);
+                Message message = new Message("Bid", "addBid", stringBid);
+                String stringMessage = gson.toJson(message);
+                System.out.println("string message:" + stringMessage);
+                try {
+                    String result = postMessage(stringMessage, RepositoryPort);
+                    System.out.println("result"+result);
+                    editorPane3.setText(editorPane3.getText() + "\n\n" + result);
+                } catch (Exception en) {
+                }
 
                 }
 
         });
 
+        tabbedPane1.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                super.focusGained(e);
+                refreshOpenAuctions();
+
+            }
+        });
+        tabbedPane1.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                super.focusGained(e);
+                refreshClosedAuctions();
+            }
+        });
+        closedUpdateButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                refreshClosedAuctions();
+            }
+        });
+
+        terminateButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String chosen_auction = comboBoxTerminate.getSelectedItem().toString();
+                String uuid = (chosen_auction.substring(chosen_auction.indexOf("<")+1));
+                String response="";
+                Gson gson = new Gson();
+                uuid = uuid.substring(0, uuid.length() - 1);
+                Message message = new Message("Auction", "terminateAuction", uuid);
+                String stringMessage = gson.toJson(message);
+                try {
+                    //sends the auction in to the manager to close it
+                    response = postMessage(stringMessage, ManagerPort);
+                }
+                catch (Exception e123){ }
+
+               refreshClosedAuctions();
+                refreshOpenAuctions();
+
+            }
+
+        });
+        comboBoxTerminate.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {}
+
+
+        });
     }
+
 
 
 
@@ -288,6 +316,102 @@ public class AuctionClient {
         System.out.println(responseBody);
         return responseBody;
     }
+    private void refreshOpenAuctions()
+    {
+        String stringMessage = "";
+
+
+            try {
+                stringMessage = (getMessage("open", RepositoryPort));
+            } catch (Exception en2) {
+            }
+
+        if(stringMessage.equals("empty"))
+        {
+            editorPaneOpenAuctionsList.setText(" No auctions available...");
+        }
+        else {
+            Gson gson = new Gson();
+            Type type = new TypeToken<HashMap<String, ArrayList<Block>>>() {
+            }.getType();
+
+            System.out.println("response:" + stringMessage);
+            HashMap<String, ArrayList<Block>> active_blockchains = gson.fromJson(stringMessage, type);
+
+            System.out.println(active_blockchains.size());
+            editorPaneOpenAuctionsList.setText("");
+            for (HashMap.Entry<String, ArrayList<Block>> entry : active_blockchains.entrySet()) {
+
+                String key = entry.getKey();
+                ArrayList<Block> value = entry.getValue();
+                System.out.println(value.get(0).auction.getProduct());
+                String seller = value.get(0).auction.getSeller();
+                String product = value.get(0).auction.getProduct();
+                String uuid = key;
+                String bids = "";
+                for (int i = 1; i < value.size(); i++) {
+                    bids = " Bid id:" + value.get(i).bid.getBid_id() + "\t(" + value.get(i).bid.getBid_value() + ")€ from: " + value.get(i).bid.getFrom() + " on: " + value.get(i).timestamp + "\n" + bids;
+                }
+                editorPaneOpenAuctionsList.setText(editorPaneOpenAuctionsList.getText() + "\n\n" + "Seller: " + seller + "  Product: " + product + " UUID:<" + uuid + "> \n" + bids);
+                // ...
+            }
+
+
+
+            comboBoxTerminate.removeAllItems();
+            for (HashMap.Entry<String, ArrayList<Block>> entry : active_blockchains.entrySet()) {
+
+                String key = entry.getKey();
+                ArrayList<Block> value = entry.getValue();
+                String product = (value.get(0).auction.getProduct());
+                String uuid = (value.get(0).auction.getId());
+                comboBoxTerminate.addItem(product+"<"+uuid+">");
+            }
+        }
+
+    }
+    private void refreshClosedAuctions()
+    {
+        String stringMessage = "";
+
+        try {
+            stringMessage = (getMessage("closed",RepositoryPort));
+        } catch (Exception en2) {
+        }
+
+            if(stringMessage.equals("empty"))
+            {
+                editorPaneClosedAuctionsList.setText(" No auctions available...");
+            }
+            else {
+                Gson gson = new Gson();
+                Type type = new TypeToken<HashMap<String, ArrayList<Block>>>() {
+                }.getType();
+
+                System.out.println("response:" + stringMessage);
+                HashMap<String, ArrayList<Block>> active_blockchains = gson.fromJson(stringMessage, type);
+
+                System.out.println(active_blockchains.size());
+                editorPaneClosedAuctionsList.setText("");
+                for (HashMap.Entry<String, ArrayList<Block>> entry : active_blockchains.entrySet()) {
+
+                    String key = entry.getKey();
+                    ArrayList<Block> value = entry.getValue();
+                    System.out.println(value.get(0).auction.getProduct());
+                    String seller = value.get(0).auction.getSeller();
+                    String product = value.get(0).auction.getProduct();
+                    String uuid = key;
+                    String bids = "";
+                    for (int i = 1; i < value.size(); i++) {
+                        bids = " Bid id:" + value.get(i).bid.getBid_id() + "\t(" + value.get(i).bid.getBid_value() + ")€ from: " + value.get(i).bid.getFrom() + " on: " + value.get(i).timestamp + "\n" + bids;
+                    }
+                    editorPaneClosedAuctionsList.setText(editorPaneClosedAuctionsList.getText() + "\n\n" + "Seller: " + seller + "  Product: " + product + " UUID:<" + uuid + "> \n" + bids + "\n Result: TBD");
+                    // ...
+                }
+            }
+
+    }
+
 
 }
 

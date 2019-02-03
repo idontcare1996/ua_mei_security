@@ -27,6 +27,9 @@ public class AuctionRepository {
     private static HashMap<String, ArrayList<Block>> active_blockchains = new HashMap<>();
     private static HashMap<String, ArrayList<Block>> terminatedBlockchain = new HashMap<>();
 
+    private static Integer RepositoryPort = 8501;
+    private static Integer ManagerPort = 8500;
+
     //Ammount of blocks to add to the blockchain, for testing
     private static final int BLOCKSTOADD = 4;
 
@@ -42,62 +45,112 @@ public class AuctionRepository {
 
     private static void handleRequest(HttpExchange exchange) throws IOException {
         Timestamp timestampReception = new Timestamp(System.currentTimeMillis());
-        ArrayList<Block> blockchain = new ArrayList<Block>();
+
         URI requestURI = exchange.getRequestURI();
         //printRequestInfo(exchange);
         //String response = "This is the response at " + requestURI;
         if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
             System.out.println(" \n          POST ");
-            String received = "";
+            String received;
             String response = "";
             received = convert(exchange.getRequestBody(), Charset.forName("UTF-8"));
             System.out.println(received);
             Gson gsonreceived = new Gson();
-            System.out.println("Hello fam");
+            System.out.println("Reached the after POST");
             Message message = gsonreceived.fromJson(received, Message.class);
             switch (message.getAction()) {
 
-                case "validate":
-                Auction receivedAuction = gsonreceived.fromJson(message.getData(), Auction.class);
-                System.out.println(receivedAuction.getId());
+                case "addAuction":
+                    ArrayList<Block> blockchain = new ArrayList<Block>();
+                    Auction receivedAuction = gsonreceived.fromJson(message.getData(), Auction.class);
+                    System.out.println(receivedAuction.getId());
 
-                //SEND THIS TO THE BLOCk
+                    //SEND THIS TO THE BLOCk
 
-                //Adding the genesis block to the blockchain
-                blockchain.add(new Block(receivedAuction, "0")); // First block's previous hash is 0 because it's the genesis block.
-                blockchain.add(new Block(receivedAuction,(blockchain.get(blockchain.size()-1).hash)));
-                //Stores the blockchain in JSON format, with PrettyPrinting on(facilitating human reading).
-                String blockchainJSON = new GsonBuilder().setPrettyPrinting().create().toJson(blockchain);
+                    //Adding the genesis block to the blockchain
+                    blockchain.add(new Block(receivedAuction, "0")); // First block's previous hash is 0 because it's the genesis block.
+                    //blockchain.add(new Block(receivedAuction,(blockchain.get(blockchain.size()-1).hash)));
+                    //Stores the blockchain in JSON format, with PrettyPrinting on(facilitating human reading).
+                    String blockchainJSON = new GsonBuilder().setPrettyPrinting().create().toJson(blockchain);
 
-                //Prints the JSON
-                System.out.println(blockchainJSON);
+                    //Prints the JSON
+                    // System.out.println(blockchainJSON);
 
-                System.out.println("Is the blockchain valid: " + isBlockChainValid(blockchain));
-                active_blockchains.put(receivedAuction.getId(), blockchain);
+                    //System.out.println("Is the blockchain valid: " + isBlockChainValid(blockchain));
+                    active_blockchains.put(receivedAuction.getId(), blockchain);
+                    System.out.println("actove: "+active_blockchains + "\n" + "  receivedAuction: "+receivedAuction + "\n blockchain: "+blockchain);
 
-                response = ("Auction id: " + receivedAuction.getId() + "\n" + "Auction creation timestamp: " + receivedAuction.getTimestamp() + "\n" + "Timestamp reception: " + timestampReception + "\n");
-                System.out.println(response);
+                    response = ("Auction id: " + receivedAuction.getId() + "\n" + "Auction creation timestamp: " + receivedAuction.getTimestamp() + "\n" + "Timestamp reception: " + timestampReception + "\n");
+                    System.out.println(response);
+                    break;
                 case "List":
                     System.out.println("listing...");
                     response = gsonreceived.toJson(active_blockchains);
-
+                    break;
+                case "terminateAuction":
+                    System.out.println("Terminating...");
+                    terminatedBlockchain.put(message.getData(),active_blockchains.get(message.getData()));
+                    active_blockchains.remove(message.getData());
+                    response = "removed";
+                    break;
                 case "listInBids":
                     System.out.println("listing...");
                     response = gsonreceived.toJson(active_blockchains);
                     break;
-                    case "add":
-                        System.out.println("adding...");
-                        try {
-
-                            postMessage(received, 8501);
-                        }catch (Exception en) {
+                case "addBid":
+                    System.out.println("adding bid...");
+                    String responseBidToManager="tbd";
+                    Gson gson = new Gson();
+                    Bid receivedBid = gsonreceived.fromJson(message.getData(), Bid.class);
+                    System.out.println("Sending "+receivedBid.getAuction_number()+" to the  manager for verification");
+                    String stringBid = gson.toJson(receivedBid);
+                    message = new Message("Bid", "addBid", stringBid);
+                    String stringMessage = gson.toJson(message);
+                    try {
+                        //send it to the manager to check
+                        responseBidToManager = postMessage(stringMessage, ManagerPort);
+                        System.out.println("response:" + responseBidToManager);
+                    }catch (Exception en) {
+                        System.out.println(en);
+                    }
+                    System.out.println("responseBidToManager: "+responseBidToManager);
+                    if(responseBidToManager.equals("good"))
+                    {
+                        System.out.println("active: "+active_blockchains);
+                        ArrayList<Block> blockchain_active = active_blockchains.get(receivedBid.getAuction_number());
+                        System.out.println("number:" + receivedBid.getAuction_number());
+                        System.out.println("check");
+                        for(int i=0;i<blockchain_active.size();i++)
+                        {
+                            System.out.println(i + " " +blockchain_active.get(i).hash);
                         }
-                        Bid receivedBid = gsonreceived.fromJson(message.getData(), Bid.class);
-                        active_blockchains.get(receivedBid.getAuction_number()).add(new Block(receivedBid,(blockchain.get(blockchain.size()-1).hash)));
 
+
+                        blockchain_active.add(blockchain_active.size(),new Block(receivedBid,blockchain_active.get(blockchain_active.size()-1).hash));
+                        if(isBlockChainValid(blockchain_active))
+                        {
+                            System.out.println("Sucess, bid entered!Blockchain is valid");
+                            response = "Bid entered blockchain...";
+                            System.out.println(response);
+                        }
+                        else
+                        {
+                            System.out.println("Error, blockchain invalid");
+                            response = "Bid did not enter blockchain...";
+                            System.out.println(response);
+                        }
+
+                    }
+                    else
+                    {
+                        response = "good = false Bid did not enter blockchain...";
+                        System.out.println(response);
+
+                    }
+                    break;
                         //Stores the blockchain in JSON format, with PrettyPrinting on(facilitating human reading).
             }//USAR O receivedAuction.get(...) para usar os dados no repositório e no manager
-            System.out.println(response);
+            System.out.println("response:"+response);
             //envio a resposta ao pedido de Post, neste caso, metendo esta string construída com o que se obtem do novo objecto Auction
             exchange.sendResponseHeaders(200, response.length());
             OutputStream os = exchange.getResponseBody();
@@ -116,17 +169,37 @@ public class AuctionRepository {
             System.out.println("uri: "+uri.getQuery());
 
             String response;
-            if(uri.getQuery().equals("=open"))
+            switch (uri.getQuery())
             {
+            case "=open":
                 //send both repositories
 
-                response = new GsonBuilder().setPrettyPrinting().create().toJson(active_blockchains);
+                if(active_blockchains.isEmpty())
+                {
+                    response="empty";
+                }
+                else {
+                    response = new GsonBuilder().setPrettyPrinting().create().toJson(active_blockchains);
+                }
+                break;
 
+            case "=closed":
+            {
+                //send both repositories
+                if(terminatedBlockchain.isEmpty())
+                {
+                    response="empty";
+                }
+                else {
+                    response = new GsonBuilder().setPrettyPrinting().create().toJson(terminatedBlockchain);
+                }
+                break;
 
             }
-            else {
-                response = "We received your GET request. Unfortunately, Madaíl hasn't done this part yet and I'm tired \n " + "Time: " + timestampReception;
+                default:
+                response = "ERROR, wrong query ("+requestURI.getQuery()+" \n " + "Time: " + timestampReception;
             }
+
             System.out.println("response:" + response);
             exchange.sendResponseHeaders(200, response.getBytes().length);
             OutputStream os = exchange.getResponseBody();

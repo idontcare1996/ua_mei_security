@@ -22,6 +22,8 @@ import java.sql.Timestamp;
 import java.util.*;
 
 
+
+
 public class AuctionManager {
     //TODO: CLEAN THESE UNUSED VARIABLES
     private Selector selector;
@@ -30,8 +32,12 @@ public class AuctionManager {
     private static HashMap<String, Settings> auctionSettings = new HashMap<>();
     private static HashMap<String, String> auctionPasswordsE = new HashMap<>();
     private static HashMap<String, String> auctionPasswordsD = new HashMap<>();
+    private static Integer RepositoryPort = 8501;
+    private static Integer ManagerPort = 8500;
+
 
     public static void main(String[] args) throws Exception {
+
 
 
 // HTTP SERVER STUFF
@@ -45,19 +51,20 @@ public class AuctionManager {
         Timestamp timestampReception = new Timestamp(System.currentTimeMillis());
         URI requestURI = exchange.getRequestURI();
         //printRequestInfo(exchange);
-        //String response = "This is the response at " + requestURI;
+        System.out.println("This is the response at " + requestURI);
         if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
             System.out.println(" \n          POST ");
-            String received = "";
+            String received;
 
             received = convert(exchange.getRequestBody(), Charset.forName("UTF-8"));
-
+            System.out.println("received: "+received);
             Gson gson = new Gson();
             //System.out.println(gsonReceived);
             Message receivedMessage = gson.fromJson(received, Message.class);
-            if (receivedMessage.getAction()=="addBid"){
 
-
+            // RECEIVED BID FROM REPOSITORY
+            if (receivedMessage.getAction().equals("addBid")){
+                System.out.println(" Checking bid...");
 
                 Bid receivedBid = gson.fromJson(receivedMessage.getData(), Bid.class);
                 Settings auxSettings = auctionSettings.get(receivedBid.getAuction_number());
@@ -69,12 +76,69 @@ public class AuctionManager {
                 if (auxSettings.isEncryptedBidValue()){
                     //Encrypt bid value
                     receivedBid.setBid_value("Encrypted");
-
                 }
                 if (auxSettings.isEncryptedAuthor()){
                     //Encrypt author
                 }
-                String response = gson.toJson(receivedBid);
+                String response = "good";
+                System.out.println("response:"+response);
+                //USAR O receivedAuction.get(...) para usar os dados no repositório e no manager
+
+                //envio a resposta ao pedido de Post, neste caso, metendo esta string construída com o que se obtem do novo objecto Auction
+                exchange.sendResponseHeaders(200, response.length());
+                OutputStream os = exchange.getResponseBody();
+                os.write(response.getBytes());
+                os.close();
+                System.out.println("Bid added...");
+            }
+            if (receivedMessage.getAction().equals("terminateAuction")) {
+                System.out.println("Terminating... ");
+                String response = "";
+                String uuid = receivedMessage.getData();
+                Message message = new Message("Auction", "terminateAuction", uuid);
+                String stringMessage = gson.toJson(message);
+                try {
+                    //sends the auction in to the manager to close it
+                    response = send(stringMessage, RepositoryPort);
+                }
+                catch (Exception e123){ }
+
+                exchange.sendResponseHeaders(200, response.length());
+                OutputStream os = exchange.getResponseBody();
+                os.write(response.getBytes());
+                os.close();
+                System.out.println("Request to terminate sent...");
+
+            }
+
+            if (receivedMessage.getAction().equals("addAuction"))
+            {
+                System.out.println("Adding auction...");
+                Auction receivedAuction = gson.fromJson(receivedMessage.getData(), Auction.class);
+                UUID uuid = UUID.randomUUID();
+                receivedAuction.setId(uuid.toString());
+                System.out.println(receivedAuction.getId());
+                Settings receivedSettings = gson.fromJson(receivedAuction.getSettings(), Settings.class);
+
+                //Guarda os settings
+                auctionSettings.put(receivedAuction.getId(), receivedSettings);
+
+                //enviar receivedAuction para o Repositório
+                String stringAuction = gson.toJson(receivedAuction);
+
+                // Enviar para o repositório
+                Message message = new Message("Auction", "addAuction", stringAuction);
+                String stringMessage = gson.toJson(message);
+                System.out.println("Enviando para o repositório" + stringMessage);
+                try {
+                    send(stringMessage,RepositoryPort);
+                }catch (Exception en) {
+                }
+
+                // SEND RESPONSE TO CLIENT
+                String response = ("Auction id: " + receivedAuction.getId() + "\n" + "Auction creation timestamp: " + receivedAuction.getTimestamp() + "\n" + "Timestamp reception: " + timestampReception + "\n");
+                System.out.println(response);
+                System.out.println(receivedAuction.getProduct());
                 //USAR O receivedAuction.get(...) para usar os dados no repositório e no manager
 
                 //envio a resposta ao pedido de Post, neste caso, metendo esta string construída com o que se obtem do novo objecto Auction
@@ -83,53 +147,6 @@ public class AuctionManager {
                 os.write(response.getBytes());
                 os.close();
             }
-            Auction receivedAuction = gson.fromJson(receivedMessage.getData(), Auction.class);
-            UUID uuid = UUID.randomUUID();
-            receivedAuction.setId(uuid.toString());
-            System.out.println(receivedAuction.getId());
-            Settings receivedSettings = gson.fromJson(receivedAuction.getSettings(), Settings.class);
-
-            //DÁ-LHE UM UUID
-
-
-            //Guarda os settings
-            auctionSettings.put(receivedAuction.getId(), receivedSettings);
-            //auctionSettings.put(receivedAuction.getId(),receivedSettings.getTime());
-
-            /*
-            if (receivedSettings.isEncryptedBidder()){
-                //Encrypt bidder
-            }
-            if (receivedSettings.isEncryptedBidVale()){
-                //Encrypt bid value
-
-            }
-            if (receivedSettings.isEncryptedAuthor()){
-                //Encrypt author
-            }*/
-            //enviar receivedAuction para o Repositório
-            String stringAuction = gson.toJson(receivedAuction);
-
-            Message message = new Message("Auction", "validate", stringAuction);
-            String stringMessage = gson.toJson(message);
-            System.out.println(stringMessage);
-            try {
-                send(stringMessage,"8501");
-            }catch (Exception en) {
-            }
-
-            // SEND RESPONSE TO CLIENT
-            String response = ("Auction id: " + receivedAuction.getId() + "\n" + "Auction creation timestamp: " + receivedAuction.getTimestamp() + "\n" + "Timestamp reception: " + timestampReception + "\n");
-            System.out.println(response);
-            System.out.println(receivedAuction.getProduct());
-            //USAR O receivedAuction.get(...) para usar os dados no repositório e no manager
-
-            //envio a resposta ao pedido de Post, neste caso, metendo esta string construída com o que se obtem do novo objecto Auction
-            exchange.sendResponseHeaders(200, response.length());
-            OutputStream os = exchange.getResponseBody();
-            os.write(response.getBytes());
-            os.close();
-
 
         }
         //TO DO: tirar no final
@@ -160,7 +177,7 @@ public class AuctionManager {
             return scanner.useDelimiter("\\A").next();
         }
     }
-    private static void send(String message2send, String port) throws Exception{
+    private static String send(String message2send, Integer port) throws Exception{
 
 
         // HTTP code
@@ -174,7 +191,7 @@ public class AuctionManager {
 
         HttpResponse response = httpClient.execute(request);
         String responseBody = EntityUtils.toString(response.getEntity());
-
+        return responseBody;
 
 
     }
