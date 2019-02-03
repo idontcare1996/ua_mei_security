@@ -1,9 +1,0 @@
-all: make_rsaref_dir
-
-clean:
-	- rm opensc/*.h
-	- rm -rf opensc/rsaref
-
-make_rsaref_dir:
-	test opensc/rsaref && mkdir -p opensc/rsaref
-
