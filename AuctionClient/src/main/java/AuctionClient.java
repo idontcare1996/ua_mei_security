@@ -58,6 +58,8 @@ public class AuctionClient {
     private JComboBox comboBoxAuction;
     private JTextField textFieldDescription;
     private JEditorPane editorPane2;
+    private JButton bidButton;
+    private JTextField bidValue;
 
     String ccNumber = "12345678";
     Integer RepositoryPort = 8501;
@@ -199,6 +201,31 @@ public class AuctionClient {
                 textFieldDescription.setText(uuid);
 
             }
+        });
+        bidButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+                    Gson gson = new Gson();
+                    System.out.println(textFieldDescription.getText());
+                    Bid bid = new Bid(textFieldDescription.getText(),
+                            Long.parseLong(bidValue.getText()),
+                            "Author");//todo: from
+                    String auctionBid = gson.toJson(bid);
+
+
+                    Message message = new Message("Bid", "Add", auctionBid);
+                    String stringMessage = gson.toJson(message);
+                    System.out.println(stringMessage);
+                    try {
+                        String result = postMessage(stringMessage, RepositoryPort);
+                        System.out.println(result);
+                        //editorPane1.setText(editorPane1.getText() + "\n\n" + result);
+                    } catch (Exception en) {
+                    }
+
+                }
+
         });
 
     }

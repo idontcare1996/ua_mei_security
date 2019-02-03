@@ -1,6 +1,13 @@
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.sun.net.httpserver.*;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -77,6 +84,18 @@ public class AuctionRepository {
                 case "listInBids":
                     System.out.println("listing...");
                     response = gsonreceived.toJson(active_blockchains);
+                    break;
+                    case "add":
+                        System.out.println("adding...");
+                        try {
+
+                            postMessage(received, 8501);
+                        }catch (Exception en) {
+                        }
+                        Bid receivedBid = gsonreceived.fromJson(message.getData(), Bid.class);
+                        active_blockchains.get(receivedBid.getAuction_number()).add(new Block(receivedBid,(blockchain.get(blockchain.size()-1).hash)));
+
+                        //Stores the blockchain in JSON format, with PrettyPrinting on(facilitating human reading).
             }//USAR O receivedAuction.get(...) para usar os dados no repositório e no manager
             System.out.println(response);
             //envio a resposta ao pedido de Post, neste caso, metendo esta string construída com o que se obtem do novo objecto Auction
@@ -170,5 +189,44 @@ public class AuctionRepository {
             return scanner.useDelimiter("\\A").next();
         }
     }
+    private static String postMessage(String mensage, Integer port) throws Exception {
+
+
+        // HTTP code
+        StringEntity entity = new StringEntity(mensage, ContentType.APPLICATION_JSON);
+
+        HttpClient httpClient = HttpClientBuilder.create().build();
+        HttpPost request = new HttpPost("http://localhost:" + port + "/security");
+        request.setEntity(entity);
+
+        Gson gson = new Gson();
+
+        HttpResponse response = httpClient.execute(request);
+        //Message message = gson.fromJson(mensage, Message.class);
+        //System.out.println(message.getAction());
+        /*switch (message.getAction()){
+            case "listInBids":
+                System.out.println(";:)");
+
+                Type type = new TypeToken<HashMap<String, ArrayList<Block>>>(){}.getType();
+
+                String responseBody = convert(response.getEntity().getContent(),Charset.forName("UTF-8"));
+                System.out.println("response:"+responseBody);
+                HashMap<String, ArrayList<Block>> active_blockchains = gson.fromJson(responseBody, type);
+
+                System.out.println(active_blockchains.size());
+                for (HashMap.Entry<String, ArrayList<Block>> entry : active_blockchains.entrySet()) {
+
+                    String key = entry.getKey();
+                    ArrayList<Block> value = entry.getValue();
+                    System.out.println(value.get(0).auction.getProduct());
+                    comboBoxAuction.addItem(value.get(0).auction.getProduct());
+                    // ...
+                }
+        }*/
+        String responseBody = EntityUtils.toString(response.getEntity());
+        return responseBody;
+    }
+
 }
 

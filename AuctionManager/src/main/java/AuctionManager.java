@@ -27,7 +27,7 @@ public class AuctionManager {
     private Selector selector;
     private Map<SocketChannel,List> dataMapper;
     private InetSocketAddress listenAddress;
-    private static HashMap<String, Integer> auctionSettings = new HashMap<>();
+    private static HashMap<String, Settings> auctionSettings = new HashMap<>();
     private static HashMap<String, String> auctionPasswordsE = new HashMap<>();
     private static HashMap<String, String> auctionPasswordsD = new HashMap<>();
 
@@ -55,21 +55,47 @@ public class AuctionManager {
             Gson gson = new Gson();
             //System.out.println(gsonReceived);
             Message receivedMessage = gson.fromJson(received, Message.class);
+            if (receivedMessage.getAction()=="addBid"){
 
+
+
+                Bid receivedBid = gson.fromJson(receivedMessage.getData(), Bid.class);
+                Settings auxSettings = auctionSettings.get(receivedBid.getAuction_number());
+
+                if (auxSettings.isEncryptedBidder()){
+                    //Encrypt bidder
+                    receivedBid.setFrom(""/*todo: */);
+                }
+                if (auxSettings.isEncryptedBidVale()){
+                    //Encrypt bid value
+
+                }
+                if (auxSettings.isEncryptedAuthor()){
+                    //Encrypt author
+                }
+                String response = gson.toJson(receivedBid);
+                //USAR O receivedAuction.get(...) para usar os dados no repositório e no manager
+
+                //envio a resposta ao pedido de Post, neste caso, metendo esta string construída com o que se obtem do novo objecto Auction
+                exchange.sendResponseHeaders(200, response.length());
+                OutputStream os = exchange.getResponseBody();
+                os.write(response.getBytes());
+                os.close();
+            }
             Auction receivedAuction = gson.fromJson(receivedMessage.getData(), Auction.class);
-
-            Settings receivedSettings = gson.fromJson(receivedAuction.getSettings(), Settings.class);
-
-            //DÁ-LHE UM UUID
             UUID uuid = UUID.randomUUID();
             receivedAuction.setId(uuid.toString());
             System.out.println(receivedAuction.getId());
+            Settings receivedSettings = gson.fromJson(receivedAuction.getSettings(), Settings.class);
+
+            //DÁ-LHE UM UUID
+
 
             //Guarda os settings
+            auctionSettings.put(receivedAuction.getId(), receivedSettings);
+            //auctionSettings.put(receivedAuction.getId(),receivedSettings.getTime());
 
-            auctionSettings.put(receivedAuction.getId(),receivedSettings.getTime());
-
-
+            /*
             if (receivedSettings.isEncryptedBidder()){
                 //Encrypt bidder
             }
@@ -79,7 +105,7 @@ public class AuctionManager {
             }
             if (receivedSettings.isEncryptedAuthor()){
                 //Encrypt author
-            }
+            }*/
             //enviar receivedAuction para o Repositório
             String stringAuction = gson.toJson(receivedAuction);
 
